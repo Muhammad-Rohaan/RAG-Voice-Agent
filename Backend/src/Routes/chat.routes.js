@@ -1,9 +1,10 @@
 import express from 'express';
+import { chatWithAgent } from '../Controllers/chat.controller';
 
 
 const router = express.Router();
 
-router.post('/chat', chat);
+router.post('/chat', chatWithAgent);
 
 
 
