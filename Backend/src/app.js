@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectDB from "./Config/dbConfig.js";
 import authRoutes from "./Routes/auth.route.js";
+import chatRoutes from "./Routes/chat.routes.js";
 
 const app = express();
 
@@ -14,19 +15,21 @@ const port = process.env.PORT || 8000;
 app.use(express.json());
 app.use(cookieParser());
 
-// app.use(cors({
-//     origin:"http://localhost:5173",
-//     methods: ["GET", "POST", "PUT", "DELETE"],
-//     credentials:true,
-//     allowedHeaders: ["Content-Type", "Authorization"]
-// }));
-
+app.use(cors({
+    origin:"http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials:true,
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 connectDB();
 
 app.get('/', (req, res) => {
     res.send('Welcome');
 })
+
+app.use('/api/akuh/auth', authRoutes);
+app.use('/api/akuh/ai/', chatRoutes);
 
 
 

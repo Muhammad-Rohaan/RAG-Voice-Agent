@@ -10,3 +10,7 @@ const ChatModelSchema = new mongoose.Schema({
 },
     { timestamps: true }
 );
+
+const Chat = mongoose.model('Chat', ChatModelSchema);
+
+export default Chat;

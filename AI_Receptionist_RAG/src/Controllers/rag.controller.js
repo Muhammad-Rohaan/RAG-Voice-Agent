@@ -2,6 +2,7 @@ import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 
 
+
 /*
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -82,3 +83,5 @@ export const createChunks = async (docs) => {
 
     return chunkedDocs;
 }
+
+

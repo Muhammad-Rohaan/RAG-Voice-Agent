@@ -83,35 +83,3 @@ export const embedding = async (chunks) => {
     console.log(`\nAll ${chunks.length} chunks stored in ChromaDB successfully.`);
 };
 
-
-// // ── QUERYING — retrieve relevant chunks for a user question ────────
-// export const queryChroma = async (userQuestion, topK = 5) => {
-//     console.log(`Querying ChromaDB for: "${userQuestion}"`);
-
-//     const client = getChromaClient();
-
-//     const collection = await client.getCollection({
-//         name: process.env.CHROMA_COLLECTION_NAME || 'akuh_knowledge_base',
-//     });
-
-//     // Embed the user question using RETRIEVAL_QUERY task type
-//     const { queryEmbeddingModel } = await import('../Utils/embeddingModel.js');
-//     const queryVector = await queryEmbeddingModel.embedQuery(userQuestion);
-
-//     // Search ChromaDB for similar chunks
-//     const results = await collection.query({
-//         queryEmbeddings: [Array.from(queryVector)],
-//         nResults: topK,
-//         include: ['documents', 'metadatas', 'distances'],
-//     });
-
-//     // Format results
-//     const relevantChunks = results.documents[0].map((doc, idx) => ({
-//         text: doc,
-//         source: results.metadatas[0][idx]?.source || 'unknown',
-//         score: results.distances[0][idx],
-//     }));
-
-//     console.log(`Found ${relevantChunks.length} relevant chunks.`);
-//     return relevantChunks;
-// };

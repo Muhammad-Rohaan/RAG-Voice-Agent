@@ -4,7 +4,7 @@ import UserModel from "../Models/users.model.js";
 export const protect = async (req, res, next) => {
     try {
         const token = req.cookies.access_token;
-        console.log("auth.middleware.js token: " + token);
+        // console.log("auth.middleware.js token: " + token);
         if (!token) {
             return res.status(401).json({ success: false, message: "Access denied. No token provided." });
         }
@@ -21,7 +21,7 @@ export const protect = async (req, res, next) => {
 
 
     } catch (error) {
-
+        res.status(500).json(error);
     }
 }
 

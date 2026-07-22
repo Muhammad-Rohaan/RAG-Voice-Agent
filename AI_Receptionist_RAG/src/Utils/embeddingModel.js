@@ -8,3 +8,9 @@ export const embeddingModel = new GoogleGenerativeAIEmbeddings({
     model: 'gemini-embedding-2-preview',
     taskType: 'RETRIEVAL_DOCUMENT',
 });
+
+export const queryEmbeddingModel = new GoogleGenerativeAIEmbeddings({
+    apiKey: process.env.GOOGLE_API_KEY,
+    model: 'gemini-embedding-2-preview',
+    taskType: 'RETRIEVAL_QUERY',
+});

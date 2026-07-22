@@ -2,7 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import { createChunks, loadDocs } from "./Controllers/rag.controller.js";
-import { embedding } from "./Config/vectorDbConfig.js";
+import { embedding } from "./DB/ingestionPipeline.js";
+import { sendQueryToLLM } from "./Controllers/LLM.controller.js";
 
 
 const app = express();
@@ -14,12 +15,12 @@ const port = process.env.PORT || 9000;
 app.use(express.json());
 
 
-// app.use(cors({
-//     origin:"http://localhost:5173",
-//     methods: ["GET", "POST", "PUT", "DELETE"],
-//     credentials:true,
-//     allowedHeaders: ["Content-Type", "Authorization"]
-// }));
+app.use(cors({
+    origin:"http://localhost:8000",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials:true,
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 
 async function indexingPipeline() {
@@ -32,13 +33,31 @@ async function indexingPipeline() {
     await embedding(chunks);
     console.log("DONE 3: All chunks stored in ChromaDB.");
 }
-await indexingPipeline();
+// await indexingPipeline();  // for one time only
 
+// const result = await sendQueryToLLM("What are the radiology operating hours?");
+// console.log("\n── AI Receptionist Answer ──────────────────");
+// console.log(result);
+// console.log("────────────────────────────────────────────\n");
 
 
 app.get('/', (req, res) => {
     res.send('Welcome');
 })
+
+app.post('/chat', async (req, res) => {
+    try {
+        const { userQuery } = req.body;
+        if (!userQuery) {
+            return res.status(400).json({ error: 'userQuery is required' });
+        }
+        const answer = await sendQueryToLLM(userQuery);
+        res.status(200).json({ answer });
+    } catch (error) {
+        console.error("Error in /chat endpoint:", error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 
 
