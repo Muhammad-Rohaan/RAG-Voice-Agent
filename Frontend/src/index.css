@@ -1053,3 +1053,322 @@ body {
     background-color: rgba(255, 255, 255, 0.02);
   }
 }
+
+/* ==========================================
+   VOICE AGENT COMPONENT STYLING
+   ========================================== */
+
+.voice-action-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-right: 4px;
+}
+
+.voice-btn-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--border);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.voice-action-btn:hover .voice-btn-inner {
+  background-color: var(--text-light);
+  color: var(--text-primary);
+}
+
+.voice-icon {
+  z-index: 2;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* 🎤 Listening State Styles */
+.state-listening .voice-btn-inner {
+  background-color: var(--success);
+  color: white;
+}
+
+.state-listening .pulse-icon {
+  animation: pulseMic 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseMic {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.glow-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid var(--success);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  animation: ringPulse 1.8s infinite cubic-bezier(0.25, 0, 0, 1);
+}
+
+.glow-2 {
+  animation-delay: 0.6s;
+}
+
+@keyframes ringPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+
+/* 🤔 Processing/Thinking State Styles */
+.state-processing .voice-btn-inner {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.spin-icon {
+  animation: spin 1.2s linear infinite;
+  z-index: 2;
+}
+
+.orbit-line {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: spin 4s linear infinite reverse;
+}
+
+/* 🔊 Speaking State Styles */
+.state-speaking .voice-btn-inner {
+  background-color: var(--accent);
+  color: white;
+}
+
+.voice-wave-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 16px;
+  position: absolute;
+  top: 13px;
+  left: 0;
+  right: 0;
+  margin: auto;
+  z-index: 2;
+  transition: opacity 0.2s ease;
+}
+
+.voice-wave-bars .bar {
+  width: 2px;
+  height: 3px;
+  background-color: white;
+  border-radius: 1px;
+  animation: bounceBar 1.2s infinite ease-in-out;
+}
+
+.bar-1 { animation-delay: 0.1s; }
+.bar-2 { animation-delay: 0.3s; }
+.bar-3 { animation-delay: 0.6s; }
+.bar-4 { animation-delay: 0.2s; }
+.bar-5 { animation-delay: 0.4s; }
+.bar-6 { animation-delay: 0.5s; }
+
+@keyframes bounceBar {
+  0%, 100% { height: 3px; }
+  50% { height: 16px; }
+}
+
+.state-speaking .speak-icon {
+  opacity: 0;
+  position: absolute;
+  z-index: 3;
+}
+
+/* Show interrupt icon on hover over speaking button */
+.state-speaking:hover .speak-icon {
+  opacity: 1;
+}
+
+.state-speaking:hover .voice-wave-bars {
+  opacity: 0;
+}
+
+/* 🔇 Disabled state styling */
+.state-disabled .voice-btn-inner {
+  background-color: var(--border);
+  color: var(--text-light);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ==========================================
+   VOICE SETTINGS PANEL IN SIDEBAR
+   ========================================== */
+
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.toggle-setting-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 14px;
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.toggle-setting-btn:hover {
+  background-color: rgba(2, 80, 145, 0.03);
+  border-color: var(--primary);
+}
+
+.toggle-setting-btn.active {
+  border-color: var(--primary);
+  background-color: var(--accent-light);
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.setting-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.setting-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toggle-icon {
+  color: var(--text-light);
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toggle-icon.active-toggle {
+  color: var(--primary);
+}
+
+/* ==========================================
+   VOICE FLOATING STATUS BANNERS & ERROR BARS
+   ========================================== */
+
+.voice-floating-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px auto;
+  padding: 8px 16px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(10px);
+  width: fit-content;
+  z-index: 10;
+}
+
+.status-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-listening {
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--success);
+}
+.status-listening .status-indicator-dot {
+  background-color: var(--success);
+  box-shadow: 0 0 6px var(--success);
+  animation: pulseDot 0.8s infinite alternate;
+}
+
+.status-processing {
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #2563eb;
+}
+.status-processing .status-indicator-dot {
+  background-color: #3b82f6;
+  box-shadow: 0 0 6px #3b82f6;
+  animation: pulseDot 0.8s infinite alternate;
+}
+
+.status-speaking {
+  border-color: rgba(212, 175, 55, 0.3);
+  color: #b45309;
+}
+.status-speaking .status-indicator-dot {
+  background-color: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  animation: pulseDot 0.8s infinite alternate;
+}
+
+@keyframes pulseDot {
+  from { transform: scale(0.95); opacity: 0.6; }
+  to { transform: scale(1.2); opacity: 1; }
+}
+
+.voice-agent-error-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: rgba(239, 68, 68, 0.08);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.15);
+  color: var(--error);
+  padding: 10px 32px;
+  font-size: 13px;
+  animation: slideUp 0.2s ease;
+}
+
+.error-bar-icon {
+  flex-shrink: 0;
+}
+

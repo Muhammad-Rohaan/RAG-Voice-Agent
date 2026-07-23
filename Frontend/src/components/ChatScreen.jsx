@@ -1,93 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { api } from '../utils/api';
-import FormattedMessage from './FormattedMessage';
-import { Send, LogOut, User, Sparkles, Clock, Compass, HelpCircle, Activity, Calendar, Bot } from 'lucide-react';
+import React, { useState } from 'react';
+import useVoiceAgent from '../hooks/useVoiceAgent';
+import ChatWindow from './ChatWindow';
+import VoiceButton from './VoiceButton';
+import { Send, LogOut, Sparkles, Activity, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react';
 
 export default function ChatScreen({ user, onLogout }) {
-  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const chatEndRef = useRef(null);
-
-  // Quick actions/FAQ questions
-  const faqs = [
-    { text: "Where is the Nephrology clinic?", icon: Compass },
-    { text: "What are the Radiology hours?", icon: Clock },
-    { text: "How can I book an appointment?", icon: Calendar },
-    { text: "Tell me about dentistry services", icon: HelpCircle }
-  ];
-
-  // Fetch past messages on mount
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const history = await api.getMessages();
-        // Since backend only returns agent messages, map them as agent role
-        const mappedHistory = history.map(msg => ({
-          _id: msg._id,
-          role: 'agent',
-          message: msg.message,
-          createdAt: msg.createdAt
-        }));
-        setMessages(mappedHistory);
-      } catch (err) {
-        console.error("Failed to load chat history:", err);
-      }
-    };
-
-    fetchMessages();
-  }, []);
-
-  // Auto-scroll to bottom of chat
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  
+  const {
+    agentState,
+    messages,
+    error,
+    autoContinue,
+    toggleAutoContinue,
+    handleVoiceAction,
+    submitTextQuery,
+    cancelSpeaking,
+    isSupported
+  } = useVoiceAgent();
 
   const handleSend = async (textToSend) => {
     const query = textToSend || input;
-    if (!query.trim() || loading) return;
+    if (!query.trim() || agentState === 'processing') return;
 
     if (!textToSend) {
       setInput('');
     }
 
-    setError('');
-    
-    // Add user message locally
-    const userMsgId = 'user-' + Date.now();
-    const newUserMsg = {
-      _id: userMsgId,
-      role: 'user',
-      message: query,
-      createdAt: new Date().toISOString()
-    };
-    setMessages(prev => [...prev, newUserMsg]);
-    setLoading(true);
+    // Stop synthesis if user chooses to write manually
+    cancelSpeaking();
 
-    try {
-      const data = await api.sendMessage(query);
-      
-      // Add agent message from response
-      const newAgentMsg = {
-        _id: data._id,
-        role: 'agent',
-        message: data.message,
-        createdAt: data.createdAt
-      };
-      setMessages(prev => [...prev, newAgentMsg]);
-    } catch (err) {
-      setError(err.message || 'Failed to send message.');
-      // Add a system message block showing the error
-      setMessages(prev => [...prev, {
-        _id: 'err-' + Date.now(),
-        role: 'system',
-        message: `Error: Could not reach AI Receptionist. (${err.message})`,
-        createdAt: new Date().toISOString()
-      }]);
-    } finally {
-      setLoading(false);
-    }
+    // Submit text query through the Voice Agent coordinator
+    await submitTextQuery(query);
   };
 
   const handleKeyPress = (e) => {
@@ -109,40 +53,42 @@ export default function ChatScreen({ user, onLogout }) {
         </div>
 
         <div className="sidebar-section">
+          <h3>Voice Settings</h3>
+          <div className="settings-panel">
+            <button 
+              type="button" 
+              className={`toggle-setting-btn ${autoContinue ? 'active' : ''}`}
+              onClick={toggleAutoContinue}
+              title="When enabled, the mic will automatically open after the AI finishes speaking"
+            >
+              <div className="setting-info">
+                <span className="setting-label">Hands-free Mode</span>
+                <span className="setting-desc">Auto-opens microphone</span>
+              </div>
+              {autoContinue ? (
+                <ToggleRight className="toggle-icon active-toggle" size={28} />
+              ) : (
+                <ToggleLeft className="toggle-icon" size={28} />
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="sidebar-section">
           <h3>Quick Guidelines</h3>
           <div className="sidebar-tips">
             <div className="tip-item">
               <span className="tip-num">1</span>
-              <p>Ask for doctor locations, schedules & consult fees.</p>
+              <p>Click the microphone and speak naturally.</p>
             </div>
             <div className="tip-item">
               <span className="tip-num">2</span>
-              <p>Inquire about radiology, emergency & pharmacy hours.</p>
+              <p>Click the microphone while the AI is speaking to interrupt.</p>
             </div>
             <div className="tip-item">
               <span className="tip-num">3</span>
-              <p>Follow prompts to book appointments directly to Google Calendar.</p>
+              <p>Confirm appointment summaries to sync with Google Calendar.</p>
             </div>
-          </div>
-        </div>
-
-        <div className="sidebar-section faq-section">
-          <h3>Suggested Queries</h3>
-          <div className="faq-grid">
-            {faqs.map((faq, idx) => {
-              const IconComp = faq.icon;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => handleSend(faq.text)}
-                  className="faq-btn"
-                  disabled={loading}
-                >
-                  <IconComp size={16} className="faq-icon" />
-                  <span>{faq.text}</span>
-                </button>
-              );
-            })}
           </div>
         </div>
 
@@ -168,118 +114,64 @@ export default function ChatScreen({ user, onLogout }) {
         <header className="chat-header">
           <div className="header-agent-info">
             <div className="agent-avatar-wrapper">
-              <Bot className="agent-avatar-icon" size={24} />
-              <span className="online-indicator"></span>
+              <Activity className="agent-avatar-icon" size={24} />
+              {agentState !== 'disabled' && <span className="online-indicator"></span>}
             </div>
             <div className="agent-details">
               <h2>Hospital AI Receptionist</h2>
-              <p>Aga Khan University Hospital Assistant</p>
+              <p>Aga Khan University Hospital Voice Agent</p>
             </div>
           </div>
           <div className="header-actions">
             <div className="badge">
               <Sparkles size={14} className="badge-icon" />
-              <span>RAG Knowledge Base</span>
+              <span>Voice RAG Core</span>
             </div>
           </div>
         </header>
 
-        {/* Message Thread */}
-        <div className="chat-thread">
-          {messages.length === 0 && !loading ? (
-            <div className="welcome-state">
-              <Activity className="welcome-logo" size={64} />
-              <h2>Hello, {user.username}!</h2>
-              <p>
-                I am your Aga Khan Hospital AI Receptionist. I have access to all clinic directories, timings, and calendar services. 
-                Ask me anything to get started!
-              </p>
-              <div className="welcome-cards">
-                <div className="w-card" onClick={() => handleSend("What are the OPD clinic timings?")}>
-                  <h4>🏥 timings & locations</h4>
-                  <p>"Where is the cardiology department located?"</p>
-                </div>
-                <div className="w-card" onClick={() => handleSend("What are the dentistry packages?")}>
-                  <h4>🦷 services & fees</h4>
-                  <p>"What is the dental consultation fee?"</p>
-                </div>
-                <div className="w-card" onClick={() => handleSend("I want to book an appointment")}>
-                  <h4>📅 schedule visit</h4>
-                  <p>"Help me book an appointment with Dr. Ali"</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="messages-list">
-              {messages.map((msg) => (
-                <div
-                  key={msg._id}
-                  className={`message-wrapper ${msg.role === 'user' ? 'msg-user' : msg.role === 'system' ? 'msg-system' : 'msg-agent'}`}
-                >
-                  <div className="message-avatar">
-                    {msg.role === 'user' ? (
-                      <User size={16} />
-                    ) : msg.role === 'system' ? (
-                      <Activity size={16} />
-                    ) : (
-                      <Bot size={16} />
-                    )}
-                  </div>
-                  <div className="message-bubble-wrapper">
-                    <div className="message-bubble">
-                      {msg.role === 'agent' ? (
-                        <FormattedMessage text={msg.message} />
-                      ) : (
-                        <p>{msg.message}</p>
-                      )}
-                    </div>
-                    <span className="message-time">
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              ))}
+        {/* Error Banner if any voice or API error exists */}
+        {error && (
+          <div className="voice-agent-error-bar">
+            <AlertTriangle size={16} className="error-bar-icon" />
+            <span>{error}</span>
+          </div>
+        )}
 
-              {loading && (
-                <div className="message-wrapper msg-agent msg-loading">
-                  <div className="message-avatar">
-                    <Bot size={16} />
-                  </div>
-                  <div className="message-bubble-wrapper">
-                    <div className="message-bubble typing-bubble">
-                      <span className="dot"></span>
-                      <span className="dot"></span>
-                      <span className="dot"></span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-          )}
-        </div>
+        {/* Chat Thread Scroll Window */}
+        <ChatWindow 
+          messages={messages} 
+          agentState={agentState} 
+          username={user.username}
+          onQuickQuery={handleSend}
+        />
 
         {/* Chat Input Bar */}
         <footer className="chat-footer-bar">
           <div className="input-container">
+            <VoiceButton state={agentState} onClick={handleVoiceAction} />
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Ask about departments, doctors, timings, or type 'book appointment'..."
-              disabled={loading}
+              placeholder={
+                agentState === 'listening'
+                  ? "Listening to your voice... speak now"
+                  : "Ask about departments, timings, or type 'book'..."
+              }
+              disabled={agentState === 'processing' || agentState === 'disabled'}
               rows={1}
             />
             <button
               onClick={() => handleSend()}
               className="send-btn"
-              disabled={loading || !input.trim()}
+              disabled={agentState === 'processing' || agentState === 'disabled' || !input.trim()}
             >
               <Send size={18} />
             </button>
           </div>
           <p className="disclaimer-text">
-            Disclaimer: The AI Receptionist provides information based on approved hospital documents. For medical emergencies, please visit the nearest Emergency Room.
+            Disclaimer: The AI Receptionist uses browser APIs for speech. For acute emergencies, immediately proceed to the nearest Emergency Department.
           </p>
         </footer>
       </main>
