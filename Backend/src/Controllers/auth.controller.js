@@ -4,6 +4,16 @@ import UserModel from "../Models/users.model.js";
 
 // Register User
 
+const getCookieOptions = () => {
+    const isProd = process.env.NODE_ENV === "production";
+    return {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        maxAge: 5 * 24 * 60 * 60 * 1000
+    };
+};
+
 export const register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -33,12 +43,7 @@ export const register = async (req, res) => {
             { expiresIn: process.env.JWT_EXPIRY }
         );
 
-        res.cookie('access_token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-            sameSite: 'lax',
-            maxAge: 5 * 24 * 60 * 60 * 1000
-        });
+        res.cookie("access_token", token, getCookieOptions());
 
         res.status(201).json({
             msg: "User Registered Successfully",
@@ -75,12 +80,7 @@ export const login = async (req, res) => {
                 { expiresIn: process.env.JWT_EXPIRY }
             );
 
-            res.cookie('access_token', token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-                sameSite: 'lax',
-                maxAge: 5 * 24 * 60 * 60 * 1000
-            });
+            res.cookie("access_token", token, getCookieOptions());
 
             res.status(200).json({
                 message: "Logged in successfully",
@@ -116,7 +116,7 @@ export const getUsers = async (req, res) => {
 
 export const logout = (req, res) => {
     try {
-        res.cookie("access_token", "", { maxAge: 0 });
+        res.clearCookie("access_token", getCookieOptions());
         res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
