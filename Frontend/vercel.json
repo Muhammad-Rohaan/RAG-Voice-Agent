@@ -6,6 +6,14 @@
   "installCommand": "npm install",
   "rewrites": [
     {
+      "source": "/api/akuh/:path*",
+      "destination": "https://akuh-backend.onrender.com/:path*"
+    },
+    {
+      "source": "/api/rag/:path*",
+      "destination": "https://akuh-voice-agent.onrender.com/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
