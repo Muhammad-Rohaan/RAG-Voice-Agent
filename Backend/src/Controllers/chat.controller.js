@@ -10,20 +10,29 @@ export const chatWithAgent = async (req, res) => {
             return res.status(400).json({ err: "userQuery is required" });
         }
 
-        // The RAG service runs on port 9000
-        const ragServiceResponse = await axios.post('http://localhost:9090/chat', {
+        const ragApiUrl = process.env.RAG_API_URL || 'http://localhost:9000';
+        const ragServiceResponse = await axios.post(`${ragApiUrl}/chat`, {
             userQuery,
+        }, {
+            timeout: 60000,
         });
 
         const agentResponse = ragServiceResponse.data.answer;
 
         const chat = new ChatModel({
-            message: agentResponse
+            userId: req.user?.id,
+            message: agentResponse,
+            userMessage: userQuery
         });
 
         await chat.save();
 
-        res.status(201).json(chat);
+        res.status(201).json({
+            _id: chat._id,
+            message: agentResponse,
+            userMessage: userQuery,
+            createdAt: chat.createdAt
+        });
 
     } catch (error) {
         console.error("Error in chatWithAgent():", error);
@@ -37,7 +46,8 @@ export const chatWithAgent = async (req, res) => {
 
 export const getAllMessages = async (req, res) => {
     try {
-        const allMsgs = await ChatModel.find({});
+        const query = req.user?.id ? { userId: req.user.id } : {};
+        const allMsgs = await ChatModel.find(query).sort({ createdAt: 1 });
         res.status(200).json(allMsgs)
     } catch (error) {
         console.error("Error in getAllMessages():", error);

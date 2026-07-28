@@ -1,0 +1,62 @@
+services:
+  - type: web
+    name: akuh-api-backend
+    runtime: docker
+    rootDir: ./Backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: NODE_ENV
+        value: production
+      - key: DB_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY
+        value: "5d"
+      - key: FRONTEND_URL
+        sync: false
+      - key: RAG_API_URL
+        fromService:
+          type: web
+          name: akuh-rag-backend
+          property: host
+    healthCheckPath: /health
+    autoDeploy: true
+
+  - type: web
+    name: akuh-rag-backend
+    runtime: docker
+    rootDir: ./AI_Receptionist_RAG
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_URL
+        fromService:
+          type: web
+          name: akuh-api-backend
+          property: host
+      - key: CHROMA_HOST
+        sync: false
+      - key: CHROMA_API_KEY
+        sync: false
+      - key: CHROMA_TENANT
+        sync: false
+      - key: CHROMA_DATABASE
+        sync: false
+      - key: CHROMA_COLLECTION_NAME
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true

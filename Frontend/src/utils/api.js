@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8000/api/akuh';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/akuh';
 
 async function request(path, options = {}) {
     const url = `${BASE_URL}${path}`;
@@ -12,14 +12,21 @@ async function request(path, options = {}) {
             ...defaultHeaders,
             ...options.headers,
         },
-        credentials: 'include', // Crucial for cookie-based session auth
+        credentials: 'include',
     };
 
     try {
         const response = await fetch(url, config);
-        const data = await response.json();
+        const contentType = response.headers.get('content-type');
+        let data;
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            throw new Error(`Server returned non-JSON response (HTTP ${response.status}): ${text.substring(0, 200)}`);
+        }
         if (!response.ok) {
-            throw new Error(data.err || data.msg || data.error || 'Something went wrong');
+            throw new Error(data.err || data.msg || data.error || `HTTP ${response.status}: Something went wrong`);
         }
         return data;
     } catch (error) {

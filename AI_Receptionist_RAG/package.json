@@ -10,8 +10,10 @@
   "license": "ISC",
   "author": "Muhammad Rohan",
   "type": "module",
-  "main": "index.js",
+  "main": "src/app.js",
   "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

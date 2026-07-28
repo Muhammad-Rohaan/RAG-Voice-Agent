@@ -1,3 +1,4 @@
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -14,11 +15,22 @@ const port = process.env.PORT || 9000;
 
 app.use(express.json());
 
+const allowedOrigins = (process.env.BACKEND_URL || "http://localhost:5000,http://localhost:8000,http://localhost:5173")
+    .split(",")
+    .map(origin => origin.trim())
+    .filter(Boolean);
 
 app.use(cors({
-    origin:"http://localhost:8000",
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(null, true);
+        }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials:true,
+    credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
@@ -42,7 +54,11 @@ async function indexingPipeline() {
 
 
 app.get('/', (req, res) => {
-    res.send('Welcome');
+    res.send('Welcome to AKUH RAG Service');
+})
+
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', service: 'rag-backend' });
 })
 
 app.post('/chat', async (req, res) => {
@@ -55,7 +71,7 @@ app.post('/chat', async (req, res) => {
         res.status(200).json({ answer });
     } catch (error) {
         console.error("Error in /chat endpoint:", error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
 
