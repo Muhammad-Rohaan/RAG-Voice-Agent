@@ -48,21 +48,21 @@ export default function useVoiceAgent() {
       message: transcriptText,
       createdAt: new Date().toISOString()
     };
-    
+
     setMessages(prev => [...prev, userMsg]);
     setAgentState('processing');
     setError('');
 
     try {
       const data = await chatApi.sendMessage(transcriptText);
-      
+
       const agentMsg = {
         _id: data._id,
         role: 'agent',
         message: data.message,
         createdAt: data.createdAt
       };
-      
+
       setMessages(prev => [...prev, agentMsg]);
       setAgentState('speaking');
       speak(agentMsg.message);
