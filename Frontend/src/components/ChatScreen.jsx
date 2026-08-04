@@ -6,7 +6,7 @@ import { Send, LogOut, Sparkles, Activity, ToggleLeft, ToggleRight, AlertTriangl
 
 export default function ChatScreen({ user, onLogout }) {
   const [input, setInput] = useState('');
-  
+
   const {
     agentState,
     messages,
@@ -55,8 +55,8 @@ export default function ChatScreen({ user, onLogout }) {
         <div className="sidebar-section">
           <h3>Voice Settings</h3>
           <div className="settings-panel">
-            <button 
-              type="button" 
+            <button
+              type="button"
               className={`toggle-setting-btn ${autoContinue ? 'active' : ''}`}
               onClick={toggleAutoContinue}
               title="When enabled, the mic will automatically open after the AI finishes speaking"
@@ -139,9 +139,9 @@ export default function ChatScreen({ user, onLogout }) {
         )}
 
         {/* Chat Thread Scroll Window */}
-        <ChatWindow 
-          messages={messages} 
-          agentState={agentState} 
+        <ChatWindow
+          messages={messages}
+          agentState={agentState}
           username={user.username}
           onQuickQuery={handleSend}
         />

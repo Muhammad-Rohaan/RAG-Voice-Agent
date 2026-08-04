@@ -10,7 +10,7 @@ export const chatWithAgent = async (req, res) => {
             return res.status(400).json({ err: "userQuery is required" });
         }
 
-        let ragApiUrl = process.env.RAG_API_URL || "http://localhost:9000";
+        let ragApiUrl = process.env.RAG_API_URL ?? "http://localhost:9000";
         if (!/^https?:\/\//i.test(ragApiUrl)) {
             ragApiUrl = `https://${ragApiUrl}`;
         }

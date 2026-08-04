@@ -3,7 +3,7 @@ import { queryChroma } from '../DB/QueryPipeline.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const sendQueryToLLM = async (userQuery) => {
+export const sendQueryToGroqLLM = async (userQuery) => {
 
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 

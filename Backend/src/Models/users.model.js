@@ -12,13 +12,19 @@ const UserSchema = new mongoose.Schema(
             unique: true
         },
         password: {
+            type: String
+        },
+        googleId: {
             type: String,
-            required: [true, "Your password is required"]
+            unique: true,
+        },
+        picture: {
+            type: String
         }
 
-    }, 
-    
-    {timestamps: true}
+    },
+
+    { timestamps: true }
 );
 
 const User = mongoose.model('users', UserSchema);

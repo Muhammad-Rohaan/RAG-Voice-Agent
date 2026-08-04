@@ -1,3 +1,4 @@
+import { OAuth2Client } from 'google-auth-library';
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import UserModel from "../Models/users.model.js";
@@ -72,7 +73,7 @@ export const login = async (req, res) => {
                 msg: "User Not found, Register First."
             });
         }
-        
+
         if (await bcrypt.compare(password, currUser.password)) {
             const token = jwt.sign(
                 { id: currUser._id },
@@ -122,3 +123,70 @@ export const logout = (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 }
+
+
+export const googleAuth = async (req, res) => {
+    try {
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ message: 'Token is required' });
+        }
+
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+        const { sub: googleId, email, picture } = payload;
+        const displayName = payload.name || payload.given_name || (email ? email.split('@')[0] : 'Google User');
+
+        // Check if user already exists in MongoDB
+        let user = await UserModel.findOne({ email });
+
+        if (!user) {
+            // Create user if they don't exist
+            user = await UserModel.create({
+                googleId,
+                username: displayName,
+                email,
+                picture,
+            });
+        } else {
+            let updated = false;
+            if (!user.googleId) {
+                user.googleId = googleId;
+                updated = true;
+            }
+            if (!user.picture && picture) {
+                user.picture = picture;
+                updated = true;
+            }
+            if (updated) {
+                await user.save();
+            }
+        }
+
+        // Generate server-side application JWT token
+        const appToken = jwt.sign(
+            { id: user._id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRY }
+        );
+
+        res.cookie("access_token", appToken, getCookieOptions());
+
+        res.status(200).json({
+            message: 'Authentication successful',
+            token: appToken,
+            user: { _id: user._id, username: user.username, email: user.email, picture: user.picture }
+        });
+
+    } catch (error) {
+        console.error('Token verification error', error);
+        res.status(401).json({ message: 'Invalid Google token' });
+    }
+}
+

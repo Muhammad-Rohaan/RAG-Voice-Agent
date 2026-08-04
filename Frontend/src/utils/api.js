@@ -1,4 +1,5 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/akuh';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000' ?? '/api/akuh';  // Isko USE KARNA ON PRODUCTION
+// const BASE_URL = 'http://localhost:5000';  // REMOVE THIS ON PRODUCTION
 
 async function request(path, options = {}) {
     const url = `${BASE_URL}${path}`;
@@ -46,6 +47,12 @@ export const api = {
         request('/auth/login', {
             method: 'POST',
             body: JSON.stringify({ email, password }),
+        }),
+
+    googleAuth: (token) =>
+        request('/auth/google', {
+            method: 'POST',
+            body: JSON.stringify({ token }),
         }),
 
     logout: () =>

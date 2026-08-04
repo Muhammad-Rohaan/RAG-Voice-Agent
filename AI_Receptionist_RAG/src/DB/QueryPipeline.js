@@ -15,7 +15,7 @@ const getChromaClient = () => {
     });
 };
 
-export const queryChroma = async (userQuestion, topK = 1) => {
+export const queryChroma = async (userQuestion, topK = 3) => {
 
     const client = getChromaClient();
     console.log(`Querying ChromaDB for: "${userQuestion}"`);

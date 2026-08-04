@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { GoogleLogin } from '@react-oauth/google';
 import { api } from '../utils/api';
 import { Mail, Lock, User, LogIn, UserPlus, Activity, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
@@ -31,7 +32,29 @@ export default function AuthScreen({ onAuthSuccess }) {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      if (!credentialResponse?.credential) {
+        throw new Error('Google credential token not received.');
+      }
+      const data = await api.googleAuth(credentialResponse.credential);
+      onAuthSuccess(data.user);
+    } catch (err) {
+      console.error('Google Auth Error:', err);
+      setError(err.message || 'Google authentication failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google Sign-In was cancelled or failed to connect.');
+  };
+
   return (
+
     <div className="auth-container">
       <div className="auth-card">
         {/* Left Side: Hospital Branding Banner */}
@@ -146,6 +169,22 @@ export default function AuthScreen({ onAuthSuccess }) {
             </button>
           </form>
 
+          <div className="auth-divider">
+            <span>OR</span>
+          </div>
+
+          <div className="google-login-wrapper">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              shape="rectangular"
+              theme="outline"
+              size="large"
+              width="100%"
+              text={isLogin ? "signin_with" : "signup_with"}
+            />
+          </div>
+
           <div className="auth-toggle-link">
             {isLogin ? (
               <p>
@@ -168,3 +207,4 @@ export default function AuthScreen({ onAuthSuccess }) {
     </div>
   );
 }
+

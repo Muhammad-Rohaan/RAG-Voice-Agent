@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { createChunks, loadDocs } from "./Controllers/rag.controller.js";
 import { embedding } from "./DB/ingestionPipeline.js";
-import { sendQueryToLLM } from "./Controllers/LLM.controller.js";
+import { sendQueryToGroqLLM } from "./Controllers/GroqLLM.controller.js";
 
 
 const app = express();
@@ -67,7 +67,7 @@ app.post('/chat', async (req, res) => {
         if (!userQuery) {
             return res.status(400).json({ error: 'userQuery is required' });
         }
-        const answer = await sendQueryToLLM(userQuery);
+        const answer = await sendQueryToGroqLLM(userQuery);
         res.status(200).json({ answer });
     } catch (error) {
         console.error("Error in /chat endpoint:", error);
