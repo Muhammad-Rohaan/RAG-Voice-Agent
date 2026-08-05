@@ -11,7 +11,7 @@ export default function ChatScreen({ user, onLogout }) {
   const [input, setInput] = useState('');
   const [useRealtimeMode, setUseRealtimeMode] = useState(true);
 
-  const ragWsUrl = import.meta.env.VITE_RAG_WS_URL || 'ws://localhost:9000';
+  const ragWsUrl = import.meta.env.VITE_RAG_WS_URL ?? 'ws://akuh-voice-agent.onrender.com' ?? 'ws://localhost:9000';
 
   // Realtime Audio Socket Voice Agent Hook
   const realtimeVoice = useRealtimeVoiceAgent(ragWsUrl);
