@@ -1,9 +1,16 @@
 import React from 'react';
-import { Mic, MicOff, Loader, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Loader, Volume2, Radio } from 'lucide-react';
 
 export default function VoiceButton({ state, onClick }) {
   const getButtonContent = () => {
     switch (state) {
+      case 'connecting':
+        return (
+          <div className="voice-btn-inner connecting-state">
+            <Loader className="voice-icon spin-icon" size={24} />
+          </div>
+        );
+      case 'ready':
       case 'listening':
         return (
           <div className="voice-btn-inner listening-state">
@@ -51,8 +58,11 @@ export default function VoiceButton({ state, onClick }) {
 
   const getButtonTitle = () => {
     switch (state) {
+      case 'connecting':
+        return 'Connecting to Realtime Voice Server...';
+      case 'ready':
       case 'listening':
-        return 'Listening... Click to stop';
+        return 'Listening... Click to stop or talk';
       case 'processing':
         return 'Thinking...';
       case 'speaking':
@@ -76,3 +86,4 @@ export default function VoiceButton({ state, onClick }) {
     </button>
   );
 }
+

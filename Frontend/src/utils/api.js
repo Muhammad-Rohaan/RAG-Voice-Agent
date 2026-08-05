@@ -1,5 +1,5 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000' ?? '/api/akuh';  // Isko USE KARNA ON PRODUCTION
-// const BASE_URL = 'http://localhost:5000';  // REMOVE THIS ON PRODUCTION
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 
 async function request(path, options = {}) {
     const url = `${BASE_URL}${path}`;
@@ -69,6 +69,14 @@ export const api = {
             body: JSON.stringify({ userQuery }),
         }),
 
+    startVoiceSession: (userQuery) =>
+        request('/ai/voice/start-session', {
+            method: 'POST',
+            body: JSON.stringify({ userQuery }),
+        }),
+
+
     getMessages: () =>
         request('/ai/msgs'),
 };
+

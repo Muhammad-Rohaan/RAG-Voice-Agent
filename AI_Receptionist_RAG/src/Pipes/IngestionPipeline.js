@@ -1,5 +1,5 @@
 import { ChromaClient } from 'chromadb';
-import { embeddingModel } from '../Utils/embeddingModel.js';
+import { embeddingModel } from '../Utils/EmbeddingModel.js';
 import dotenv from 'dotenv';
 dotenv.config();
 

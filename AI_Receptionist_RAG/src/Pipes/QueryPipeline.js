@@ -1,5 +1,5 @@
 import { ChromaClient } from 'chromadb';
-import { queryEmbeddingModel } from '../Utils/embeddingModel.js'; // RETRIEVAL_QUERY
+import { queryEmbeddingModel } from '../Utils/EmbeddingModel.js'; // RETRIEVAL_QUERY
 import dotenv from 'dotenv';
 dotenv.config();
 

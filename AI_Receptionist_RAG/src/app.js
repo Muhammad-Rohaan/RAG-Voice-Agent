@@ -1,19 +1,26 @@
-
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import { createChunks, loadDocs } from "./Controllers/rag.controller.js";
-import { embedding } from "./DB/ingestionPipeline.js";
+import http from "http";
+import { WebSocketServer } from "ws";
+import { createChunks, loadDocs } from "./Controllers/RAG.controller.js";
 import { sendQueryToGroqLLM } from "./Controllers/GroqLLM.controller.js";
+// Dynamic import of startVoiceAgentSession will be done in the route handler
+import { embedding } from "./Pipes/ingestionPipeline.js";
 
-
-const app = express();
 
 dotenv.config();
+
+const app = express();
 
 const port = process.env.PORT || 9000;
 
 app.use(express.json());
+
+
+// for Voice Session:
+const server = http.createServer(app);
+export const wss = new WebSocketServer({ server });
 
 const allowedOrigins = (process.env.BACKEND_URL || "http://localhost:5000,http://localhost:8000,http://localhost:5173")
     .split(",")
@@ -76,8 +83,20 @@ app.post('/chat', async (req, res) => {
 });
 
 
+// Voice session endpoint with dynamic import to avoid circular dependency
+app.post('/voice/start-session', async (req, res) => {
+    try {
+        const { startVoiceAgentSession } = await import('./Controllers/RealTimeVoiceAgent.controller.js');
+        const { userQuery } = req.body;
+        const answer = await startVoiceAgentSession(userQuery);
+        res.status(200).json({ answer: answer || "Voice session initialized" });
+    } catch (error) {
+        console.error("Error in /voice/start-session endpoint:", error);
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    }
+});
 
-app.listen(port, () => {
+// Start server
+server.listen(port, () => {
     console.log(`AKUH RAG Server Running on: http://localhost:${port}`);
-    
-})
+});

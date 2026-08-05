@@ -1,43 +1,59 @@
 import React, { useState } from 'react';
 import useVoiceAgent from '../hooks/useVoiceAgent';
+import useRealtimeVoiceAgent from '../hooks/useRealtimeVoiceAgent';
 import ChatWindow from './ChatWindow';
 import VoiceButton from './VoiceButton';
-import { Send, LogOut, Sparkles, Activity, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react';
+import RealtimeVoiceVisualizer from './VoiceAgent/RealtimeVoiceVisualizer';
+import { Send, LogOut, Sparkles, Activity, ToggleLeft, ToggleRight, AlertTriangle, Radio } from 'lucide-react';
+
 
 export default function ChatScreen({ user, onLogout }) {
   const [input, setInput] = useState('');
+  const [useRealtimeMode, setUseRealtimeMode] = useState(true);
 
-  const {
-    agentState,
-    messages,
-    error,
-    autoContinue,
-    toggleAutoContinue,
-    handleVoiceAction,
-    submitTextQuery,
-    cancelSpeaking,
-    isSupported
-  } = useVoiceAgent();
+  const ragWsUrl = import.meta.env.VITE_RAG_WS_URL || 'ws://localhost:9000';
+
+  // Realtime Audio Socket Voice Agent Hook
+  const realtimeVoice = useRealtimeVoiceAgent(ragWsUrl);
+
+  // Web Speech API / Text Chat Hook
+  const standardVoice = useVoiceAgent();
+
+  // Active hook depending on selected mode
+  const activeAgentState = useRealtimeMode ? realtimeVoice.agentState : standardVoice.agentState;
+  const activeMessages = useRealtimeMode
+    ? (realtimeVoice.messages.length > 0 ? realtimeVoice.messages : standardVoice.messages)
+    : standardVoice.messages;
+  const activeError = useRealtimeMode ? realtimeVoice.error : standardVoice.error;
 
   const handleSend = async (textToSend) => {
     const query = textToSend || input;
-    if (!query.trim() || agentState === 'processing') return;
+    if (!query.trim() || activeAgentState === 'processing') return;
 
     if (!textToSend) {
       setInput('');
     }
 
-    // Stop synthesis if user chooses to write manually
-    cancelSpeaking();
-
-    // Submit text query through the Voice Agent coordinator
-    await submitTextQuery(query);
+    if (useRealtimeMode) {
+      realtimeVoice.stopAudioPlayback();
+    } else {
+      standardVoice.cancelSpeaking();
+      await standardVoice.submitTextQuery(query);
+    }
   };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleVoiceButtonClick = () => {
+    if (useRealtimeMode) {
+      realtimeVoice.toggleVoiceSession(input);
+    } else {
+      standardVoice.handleVoiceAction();
     }
   };
 
@@ -53,19 +69,26 @@ export default function ChatScreen({ user, onLogout }) {
         </div>
 
         <div className="sidebar-section">
-          <h3>Voice Settings</h3>
+          <h3>Voice Agent Mode</h3>
           <div className="settings-panel">
             <button
               type="button"
-              className={`toggle-setting-btn ${autoContinue ? 'active' : ''}`}
-              onClick={toggleAutoContinue}
-              title="When enabled, the mic will automatically open after the AI finishes speaking"
+              className={`toggle-setting-btn ${useRealtimeMode ? 'active' : ''}`}
+              onClick={() => {
+                if (!useRealtimeMode && standardVoice.agentState === 'speaking') {
+                  standardVoice.cancelSpeaking();
+                } else if (useRealtimeMode && realtimeVoice.isConnected) {
+                  realtimeVoice.disconnect();
+                }
+                setUseRealtimeMode(prev => !prev);
+              }}
+              title="Toggle between OpenAI Realtime Voice WebSockets and Web Speech API"
             >
               <div className="setting-info">
-                <span className="setting-label">Hands-free Mode</span>
-                <span className="setting-desc">Auto-opens microphone</span>
+                <span className="setting-label">Realtime PCM Voice</span>
+                <span className="setting-desc">OpenAI Audio WebSockets</span>
               </div>
-              {autoContinue ? (
+              {useRealtimeMode ? (
                 <ToggleRight className="toggle-icon active-toggle" size={28} />
               ) : (
                 <ToggleLeft className="toggle-icon" size={28} />
@@ -74,20 +97,44 @@ export default function ChatScreen({ user, onLogout }) {
           </div>
         </div>
 
+        {!useRealtimeMode && (
+          <div className="sidebar-section">
+            <h3>Voice Settings</h3>
+            <div className="settings-panel">
+              <button
+                type="button"
+                className={`toggle-setting-btn ${standardVoice.autoContinue ? 'active' : ''}`}
+                onClick={standardVoice.toggleAutoContinue}
+                title="When enabled, mic will auto-open after AI finishes speaking"
+              >
+                <div className="setting-info">
+                  <span className="setting-label">Hands-free Mode</span>
+                  <span className="setting-desc">Auto-opens microphone</span>
+                </div>
+                {standardVoice.autoContinue ? (
+                  <ToggleRight className="toggle-icon active-toggle" size={28} />
+                ) : (
+                  <ToggleLeft className="toggle-icon" size={28} />
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="sidebar-section">
           <h3>Quick Guidelines</h3>
           <div className="sidebar-tips">
             <div className="tip-item">
               <span className="tip-num">1</span>
-              <p>Click the microphone and speak naturally.</p>
+              <p>Click mic to start live voice session with OpenAI Realtime API.</p>
             </div>
             <div className="tip-item">
               <span className="tip-num">2</span>
-              <p>Click the microphone while the AI is speaking to interrupt.</p>
+              <p>Speak naturally to interrupt the AI Receptionist anytime.</p>
             </div>
             <div className="tip-item">
               <span className="tip-num">3</span>
-              <p>Confirm appointment summaries to sync with Google Calendar.</p>
+              <p>Ask about hospital departments, doctor timings, and fees.</p>
             </div>
           </div>
         </div>
@@ -115,7 +162,7 @@ export default function ChatScreen({ user, onLogout }) {
           <div className="header-agent-info">
             <div className="agent-avatar-wrapper">
               <Activity className="agent-avatar-icon" size={24} />
-              {agentState !== 'disabled' && <span className="online-indicator"></span>}
+              {activeAgentState !== 'disabled' && <span className="online-indicator"></span>}
             </div>
             <div className="agent-details">
               <h2>Hospital AI Receptionist</h2>
@@ -123,25 +170,35 @@ export default function ChatScreen({ user, onLogout }) {
             </div>
           </div>
           <div className="header-actions">
-            <div className="badge">
-              <Sparkles size={14} className="badge-icon" />
-              <span>Voice RAG Core</span>
+            <div className={`badge ${useRealtimeMode ? 'mode-badge-active' : ''}`}>
+              {useRealtimeMode ? <Radio size={14} className="badge-icon" /> : <Sparkles size={14} className="badge-icon" />}
+              <span>{useRealtimeMode ? 'Realtime Voice (PCM 24kHz)' : 'Voice RAG Core'}</span>
             </div>
           </div>
         </header>
 
+        {/* Realtime Live Visualizer Bar */}
+        {useRealtimeMode && (
+          <RealtimeVoiceVisualizer
+            agentState={realtimeVoice.agentState}
+            volumeLevel={realtimeVoice.volumeLevel}
+            latestAiMessage={[...realtimeVoice.messages].reverse().find(m => m.role === 'agent')}
+            latestUserMessage={[...realtimeVoice.messages].reverse().find(m => m.role === 'user')}
+          />
+        )}
+
         {/* Error Banner if any voice or API error exists */}
-        {error && (
+        {activeError && (
           <div className="voice-agent-error-bar">
             <AlertTriangle size={16} className="error-bar-icon" />
-            <span>{error}</span>
+            <span>{activeError}</span>
           </div>
         )}
 
         {/* Chat Thread Scroll Window */}
         <ChatWindow
-          messages={messages}
-          agentState={agentState}
+          messages={activeMessages}
+          agentState={activeAgentState}
           username={user.username}
           onQuickQuery={handleSend}
         />
@@ -149,29 +206,29 @@ export default function ChatScreen({ user, onLogout }) {
         {/* Chat Input Bar */}
         <footer className="chat-footer-bar">
           <div className="input-container">
-            <VoiceButton state={agentState} onClick={handleVoiceAction} />
+            <VoiceButton state={activeAgentState} onClick={handleVoiceButtonClick} />
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder={
-                agentState === 'listening'
-                  ? "Listening to your voice... speak now"
-                  : "Ask about departments, timings, or type 'book'..."
+                activeAgentState === 'listening'
+                  ? "Listening... Speak directly to the AI Receptionist"
+                  : "Ask about departments, timings, or doctors..."
               }
-              disabled={agentState === 'processing' || agentState === 'disabled'}
+              disabled={activeAgentState === 'processing' || activeAgentState === 'disabled'}
               rows={1}
             />
             <button
               onClick={() => handleSend()}
               className="send-btn"
-              disabled={agentState === 'processing' || agentState === 'disabled' || !input.trim()}
+              disabled={activeAgentState === 'processing' || activeAgentState === 'disabled' || !input.trim()}
             >
               <Send size={18} />
             </button>
           </div>
           <p className="disclaimer-text">
-            Disclaimer: The AI Receptionist uses browser APIs for speech. For acute emergencies, immediately proceed to the nearest Emergency Department.
+            Disclaimer: The AI Receptionist uses real-time audio models. For acute medical emergencies, immediately proceed to the nearest Emergency Room.
           </p>
         </footer>
       </main>
