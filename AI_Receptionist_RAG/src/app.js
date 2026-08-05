@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
 import { WebSocketServer } from "ws";
-import { createChunks, loadDocs } from "./Controllers/RAG.controller.js";
+import { createChunks, loadDocs } from "../src/Controllers/RAG.controller.js";
 import { sendQueryToGroqLLM } from "./Controllers/GroqLLM.controller.js";
 // Dynamic import of startVoiceAgentSession will be done in the route handler
 import { embedding } from "./Pipes/ingestionPipeline.js";
