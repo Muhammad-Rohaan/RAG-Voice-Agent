@@ -82,6 +82,7 @@ export default function useRealtimeVoiceAgent(wsUrl = 'wss://akuh-voice-agent.on
   const activeSourcesRef = useRef([]);
   const nextPlayTimeRef = useRef(0);
   const currentAiMsgIdRef = useRef(null);
+  const isBargeInRef = useRef(false); // true while suppressing leftover audio after user interrupts
 
   // Stop & clear all currently scheduled audio output sources (barge-in / interrupt)
   const stopAudioPlayback = useCallback(() => {
@@ -286,6 +287,7 @@ export default function useRealtimeVoiceAgent(wsUrl = 'wss://akuh-voice-agent.on
           case 'speech_started':
             if (agentStateRef.current === 'speaking') {
               console.log("⚡ User interrupted AI (Barge-in)");
+              isBargeInRef.current = true;  // suppress residual audio_delta chunks
               stopAudioPlayback();
               setAgentState('listening');
             }
@@ -309,6 +311,7 @@ export default function useRealtimeVoiceAgent(wsUrl = 'wss://akuh-voice-agent.on
 
           case 'ai_transcript_delta':
             if (data.delta) {
+              isBargeInRef.current = false; // new AI response started – allow audio again
               setAgentState('speaking');
               setMessages(prev => {
                 const last = prev[prev.length - 1];
@@ -335,7 +338,7 @@ export default function useRealtimeVoiceAgent(wsUrl = 'wss://akuh-voice-agent.on
             break;
 
           case 'audio_delta':
-            if (data.delta) {
+            if (data.delta && !isBargeInRef.current) {
               playAudioChunk(data.delta);
             }
             break;

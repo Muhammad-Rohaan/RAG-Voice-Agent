@@ -123,6 +123,11 @@ ${latestContext}`,
 
             if (event.type === "input_audio_buffer.speech_started") {
                 sendToClient({ type: "speech_started" });
+                // Cancel the ongoing AI response so it stops sending audio chunks (barge-in)
+                if (openaiWs.readyState === WebSocket.OPEN) {
+                    openaiWs.send(JSON.stringify({ type: "response.cancel" }));
+                    console.log("🛑 User interrupted – sent response.cancel to OpenAI");
+                }
             }
 
             if (event.type === "conversation.item.input_audio_transcription.completed") {
