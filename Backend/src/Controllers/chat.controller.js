@@ -12,7 +12,7 @@ export const chatWithAgent = async (req, res) => {
 
         let ragApiUrl = process.env.RAG_API_URL ?? "http://localhost:9000";
         if (!/^https?:\/\//i.test(ragApiUrl)) {
-            ragApiUrl = `http://${ragApiUrl}`;
+            ragApiUrl = `https://${ragApiUrl}`;
         }
 
         const ragServiceResponse = await axios.post(`${ragApiUrl}/chat`, {
@@ -66,14 +66,14 @@ export const talkWithAgent = async (req, res) => {
     try {
         const { userQuery } = req.body;
 
-        const queryToSend = (userQuery && typeof userQuery === 'string' && userQuery.trim()) 
-            ? userQuery.trim() 
+        const queryToSend = (userQuery && typeof userQuery === 'string' && userQuery.trim())
+            ? userQuery.trim()
             : "Aga Khan Hospital departments doctors timings fees";
 
         let ragApiUrl = process.env.RAG_API_URL ?? "http://localhost:9000";
         if (!/^https?:\/\//i.test(ragApiUrl)) {
-            ragApiUrl = `http://${ragApiUrl}`;
-            // ragApiUrl = `https://${ragApiUrl}`;  use when on PRODUCTION
+            // ragApiUrl = `http://${ragApiUrl}`;
+            ragApiUrl = `https://${ragApiUrl}`; // use when on PRODUCTION
         }
         const ragServiceResponse = await axios.post(`${ragApiUrl}/voice/start-session`, {
             userQuery: queryToSend,
