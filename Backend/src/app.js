@@ -44,6 +44,14 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', service: 'api-backend' });
 })
 
+app.get('/speech.mp3', (req, res) => {
+    let ragApiUrl = process.env.RAG_API_URL ?? "http://localhost:9000";
+    if (!/^https?:\/\//i.test(ragApiUrl)) {
+        ragApiUrl = `http://${ragApiUrl}`;
+    }
+    res.redirect(`${ragApiUrl}/speech.mp3`);
+});
+
 app.use('/auth', authRoutes);
 app.use('/ai/', chatRoutes);
 

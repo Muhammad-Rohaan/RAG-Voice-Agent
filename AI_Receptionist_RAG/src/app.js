@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
+import path from "path";
 import { WebSocketServer } from "ws";
 import { createChunks, loadDocs } from "./Controllers/RAG.controller.js";
 import { generatePkVoice, sendQueryToGroqLLM } from "./Controllers/GroqLLM.controller.js";
@@ -16,6 +17,8 @@ const app = express();
 const port = process.env.PORT || 9000;
 
 app.use(express.json());
+app.use(express.static(path.resolve('.')));
+
 
 
 // for Voice Session:
@@ -66,6 +69,10 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', service: 'rag-backend' });
+})
+
+app.get('/speech.mp3', (req, res) => {
+    res.sendFile(path.resolve('speech.mp3'), { headers: { 'Content-Type': 'audio/mpeg' } });
 })
 
 app.post('/chat', async (req, res) => {

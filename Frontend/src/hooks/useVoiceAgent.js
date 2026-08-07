@@ -65,7 +65,7 @@ export default function useVoiceAgent() {
 
       setMessages(prev => [...prev, agentMsg]);
       setAgentState('speaking');
-      speak(agentMsg.message);
+      speak(data.audioUrl || data.speechUrl || 'speech.mp3');
     } catch (err) {
       console.error("Error communicating with RAG backend:", err);
       setError(err.message || 'Error communicating with server.');
@@ -97,6 +97,7 @@ export default function useVoiceAgent() {
     error: recognitionError,
     isSupported: recognitionSupported
   } = useSpeechRecognition({
+    onStart: () => setError(''),
     onResult: handleSpeechResult,
     onError: handleSpeechError
   });
@@ -123,12 +124,11 @@ export default function useVoiceAgent() {
     setAgentState('idle');
   }, []);
 
-  // Hook for TTS synthesis
+  // Hook for Speech Audio Playback
   const {
     isSpeaking,
     speak,
-    cancel: cancelSpeaking,
-    isSupported: synthesisSupported
+    cancel: cancelSpeaking
   } = useSpeechSynthesis({
     onStart: handleSynthesisStart,
     onEnd: handleSynthesisEnd,
@@ -137,11 +137,11 @@ export default function useVoiceAgent() {
 
   // Verify browser capability
   useEffect(() => {
-    if (!recognitionSupported || !synthesisSupported) {
+    if (!recognitionSupported) {
       setAgentState('disabled');
-      setError('Web Speech APIs are not fully supported in this browser. Please use Chrome or Edge.');
+      setError('Speech Recognition is not supported in this browser. Please use Chrome or Edge.');
     }
-  }, [recognitionSupported, synthesisSupported]);
+  }, [recognitionSupported]);
 
   // Main voice button action handler
   const handleVoiceAction = useCallback(() => {
@@ -182,6 +182,6 @@ export default function useVoiceAgent() {
     submitTextQuery: handleSpeechResult,
     speakManual: speak,
     cancelSpeaking,
-    isSupported: recognitionSupported && synthesisSupported
+    isSupported: recognitionSupported
   };
 }

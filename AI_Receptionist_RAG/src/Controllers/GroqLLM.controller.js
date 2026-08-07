@@ -23,7 +23,9 @@ export const generatePkVoice = async (textMsgToConvert) => {
             }),
         });
 
-        await writeFile(`speech${new Date().getTime()}.mp3`, Buffer.from(await res.arrayBuffer()));
+        const audioBuffer = Buffer.from(await res.arrayBuffer());
+        await writeFile("speech.mp3", audioBuffer);
+        await writeFile(`speech${new Date().getTime()}.mp3`, audioBuffer);
 
     } catch (error) {
         console.log("Error in generatePkVoice()");

@@ -35,6 +35,7 @@ export const chatWithAgent = async (req, res) => {
             _id: chat._id,
             message: agentResponse,
             userMessage: userQuery,
+            audioUrl: `${ragApiUrl}/speech.mp3`,
             createdAt: chat.createdAt
         });
 

@@ -1,100 +1,87 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getEnglishVoice, isSpeechSynthesisSupported } from '../utils/speech';
 
 export default function useSpeechSynthesis({ onStart, onEnd, onError } = {}) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState('');
-  const [voice, setVoice] = useState(null);
-  const utteranceRef = useRef(null);
-
-  // Initialize voice on mount
-  useEffect(() => {
-    if (!isSpeechSynthesisSupported()) {
-      setError('Speech synthesis is not supported in this browser.');
-      return;
-    }
-
-    getEnglishVoice().then((selectedVoice) => {
-      setVoice(selectedVoice);
-    });
-  }, []);
+  const audioRef = useRef(null);
 
   const cancel = useCallback(() => {
-    if (!isSpeechSynthesisSupported()) return;
-    window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
     setIsSpeaking(false);
   }, []);
 
-  const speak = useCallback((text) => {
-    if (!isSpeechSynthesisSupported()) return;
+  const speak = useCallback((audioSource) => {
+    cancel(); // Cancel any existing audio playback
 
-    // Cancel any current speaking
-    window.speechSynthesis.cancel();
+    const timestamp = Date.now();
+    const ragBaseUrl = import.meta.env.VITE_RAG_API_BASE_URL ?? 'http://localhost:9000';
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
 
-    // Clean markdown characters so speech synthesis sounds natural
-    // (e.g. don't read out bullet dashes, asterisks, or table separator dashes/pipes)
-    const cleanText = text
-      .replace(/\*\*([^*]+)\*\*/g, '$1') // remove bold tags
-      .replace(/\*([^*]+)\*/g, '$1')     // remove italic tags
-      .replace(/[-*]\s+/g, '')            // remove list bullets
-      .replace(/\|/g, ' ')                // replace table column pipes with space
-      .replace(/-{3,}/g, ' ')             // remove table dashes
-      .replace(/#{1,6}\s+/g, '')          // remove heading hashtags
-      .replace(/\n+/g, ' ')               // replace newlines with spaces
-      .trim();
-
-    if (!cleanText) return;
-
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    
-    if (voice) {
-      utterance.voice = voice;
+    // Construct primary candidate URL
+    let primaryUrl;
+    if (typeof audioSource === 'string' && (audioSource.startsWith('http://') || audioSource.startsWith('https://'))) {
+      primaryUrl = audioSource.includes('?') ? audioSource : `${audioSource}?t=${timestamp}`;
+    } else {
+      primaryUrl = `${ragBaseUrl}/speech.mp3?t=${timestamp}`;
     }
-    
-    utterance.lang = 'en-US';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
 
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      setError('');
-      if (onStart) onStart();
+    const fallbackUrl = `${apiBaseUrl}/speech.mp3?t=${timestamp}`;
+
+    const playAudioUrl = (urlToPlay, isFallback = false) => {
+      const audio = new Audio();
+      audioRef.current = audio;
+
+      audio.onplay = () => {
+        setIsSpeaking(true);
+        setError('');
+        if (onStart) onStart();
+      };
+
+      audio.onended = () => {
+        setIsSpeaking(false);
+        audioRef.current = null;
+        if (onEnd) onEnd();
+      };
+
+      const handleFailure = (err) => {
+        if (!isFallback) {
+          console.warn(`Primary audio failed from ${urlToPlay}, trying fallback ${fallbackUrl}`, err);
+          playAudioUrl(fallbackUrl, true);
+        } else {
+          console.error('Audio playback failed on both primary and fallback URLs:', err);
+          setIsSpeaking(false);
+          audioRef.current = null;
+          if (onError) onError('Audio playback failed.');
+        }
+      };
+
+      audio.onerror = (e) => handleFailure(e);
+
+      audio.src = urlToPlay;
+      audio.play().catch((err) => handleFailure(err));
     };
 
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      if (onEnd) onEnd();
-    };
+    playAudioUrl(primaryUrl);
+  }, [cancel, onStart, onEnd, onError]);
 
-    utterance.onerror = (e) => {
-      // Ignore normal user cancels
-      if (e.error !== 'interrupted' && e.error !== 'canceled') {
-        console.error('SpeechSynthesis error:', e);
-        setError('Speech synthesis failed.');
-        if (onError) onError('Speech synthesis failed.');
-      }
-      setIsSpeaking(false);
-    };
-
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-  }, [voice, onStart, onEnd, onError]);
-
-  // Cancel speech on unmount
+  // Clean up audio on unmount
   useEffect(() => {
     return () => {
-      if (isSpeechSynthesisSupported()) {
-        window.speechSynthesis.cancel();
-      }
+      cancel();
     };
-  }, []);
+  }, [cancel]);
 
   return {
     isSpeaking,
     error,
     speak,
     cancel,
-    voice,
-    isSupported: isSpeechSynthesisSupported()
+    isSupported: true
   };
 }
+
+
