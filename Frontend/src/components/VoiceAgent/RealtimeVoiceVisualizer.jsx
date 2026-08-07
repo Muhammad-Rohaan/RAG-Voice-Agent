@@ -1,71 +1,92 @@
 import React from 'react';
-import { PhoneCall, PhoneOff, Mic, Volume2, Sparkles, Activity } from 'lucide-react';
+import { PhoneCall, PhoneOff, Mic, Volume2, Activity } from 'lucide-react';
 
 export default function RealtimeVoiceVisualizer({
   agentState,
   volumeLevel,
   latestAiMessage,
-  latestUserMessage
+  latestUserMessage,
 }) {
   const getStatusText = () => {
     switch (agentState) {
       case 'connecting':
-        return 'Connecting to AI Receptionist...';
+        return { en: 'Connecting...', ur: 'رابطہ ہو رہا ہے...' };
       case 'ready':
       case 'listening':
-        return 'Live Call Active • Listening to your voice...';
+        return { en: 'Live — I am listening', ur: 'براہ راست — سن رہا ہوں' };
       case 'speaking':
-        return 'Live Call Active • AI Receptionist is speaking...';
+        return { en: 'Live — I am speaking', ur: 'براہ راست — بول رہا ہوں' };
       case 'error':
-        return 'Voice Call Disconnected (Error)';
+        return { en: 'Call ended', ur: 'کال ختم ہو گئی' };
       case 'idle':
       default:
-        return 'Realtime Voice Call Offline';
+        return { en: 'Tap mic to start talking', ur: 'مائیک دبائیں اور بولیں' };
     }
   };
 
-  const isLive = agentState === 'listening' || agentState === 'speaking' || agentState === 'ready';
+  const status = getStatusText();
+  const isLive =
+    agentState === 'listening' || agentState === 'speaking' || agentState === 'ready';
   const level = Math.max(0.12, volumeLevel || 0.12);
 
   return (
     <div className={`realtime-visualizer-container state-${agentState}`}>
-      {/* Top Bar Status */}
       <div className="visualizer-header">
         <div className="visualizer-status-left">
           <div className={`status-dot ${isLive ? 'live' : ''}`} />
           {isLive ? (
-            <PhoneCall size={16} className="call-icon active-call" />
+            <PhoneCall size={18} className="call-icon active-call" aria-hidden="true" />
           ) : (
-            <PhoneOff size={16} className="call-icon offline-call" />
+            <PhoneOff size={18} className="call-icon offline-call" aria-hidden="true" />
           )}
-          <span className="status-label">{getStatusText()}</span>
+          <div className="status-label-group">
+            <span className="status-label">{status.en}</span>
+            <span className="status-label-ur">{status.ur}</span>
+          </div>
         </div>
 
-        {/* Live Audio Waveform */}
         {isLive && (
-          <div className="visualizer-wave-bars">
-            <div className="wave-bar" style={{ transform: `scaleY(${Math.max(0.25, level * 2.2)})` }} />
-            <div className="wave-bar" style={{ transform: `scaleY(${Math.max(0.4, level * 3.2)})` }} />
-            <div className="wave-bar" style={{ transform: `scaleY(${Math.max(0.7, level * 4.5)})` }} />
-            <div className="wave-bar" style={{ transform: `scaleY(${Math.max(0.4, level * 3.0)})` }} />
-            <div className="wave-bar" style={{ transform: `scaleY(${Math.max(0.25, level * 1.8)})` }} />
+          <div className="visualizer-wave-bars" aria-hidden="true">
+            <div
+              className="wave-bar"
+              style={{ transform: `scaleY(${Math.max(0.25, level * 2.2)})` }}
+            />
+            <div
+              className="wave-bar"
+              style={{ transform: `scaleY(${Math.max(0.4, level * 3.2)})` }}
+            />
+            <div
+              className="wave-bar"
+              style={{ transform: `scaleY(${Math.max(0.7, level * 4.5)})` }}
+            />
+            <div
+              className="wave-bar"
+              style={{ transform: `scaleY(${Math.max(0.4, level * 3.0)})` }}
+            />
+            <div
+              className="wave-bar"
+              style={{ transform: `scaleY(${Math.max(0.25, level * 1.8)})` }}
+            />
           </div>
         )}
       </div>
 
-      {/* Live AI Talking Visual Stage (Centerpiece) */}
       {isLive && (
         <div className="realtime-live-stage">
-          <div className="orb-container">
-            {/* Outer Aura Ring */}
+          <div className="orb-container" aria-hidden="true">
             <div
               className={`orb-aura ${agentState}`}
               style={{
-                transform: `scale(${agentState === 'speaking' ? 1.15 + level * 0.35 : agentState === 'listening' ? 1.0 + level * 0.4 : 1})`,
-                opacity: agentState === 'speaking' ? 0.9 : 0.4
+                transform: `scale(${
+                  agentState === 'speaking'
+                    ? 1.15 + level * 0.35
+                    : agentState === 'listening'
+                      ? 1.0 + level * 0.4
+                      : 1
+                })`,
+                opacity: agentState === 'speaking' ? 0.9 : 0.4,
               }}
             />
-            {/* Core Orb */}
             <div className={`orb-core ${agentState}`}>
               {agentState === 'speaking' ? (
                 <Volume2 size={28} className="orb-icon speaking-pulse" />
@@ -77,25 +98,25 @@ export default function RealtimeVoiceVisualizer({
             </div>
           </div>
 
-          {/* Realtime Live Speech Subtitle Caption */}
           <div className="live-caption-card">
             <div className="caption-speaker">
               {agentState === 'speaking' ? (
                 <>
-                  <Sparkles size={14} className="caption-sparkle" />
-                  <span>AI Receptionist Spoken Response:</span>
+                  <Volume2 size={16} className="caption-mic" aria-hidden="true" />
+                  <span>Hospital Reply / ہسپتال کا جواب</span>
                 </>
               ) : (
                 <>
-                  <Mic size={14} className="caption-mic" />
-                  <span>Your Spoken Voice Query:</span>
+                  <Mic size={16} className="caption-mic" aria-hidden="true" />
+                  <span>Your Question / آپ کا سوال</span>
                 </>
               )}
             </div>
             <p className="caption-body">
               {agentState === 'speaking'
-                ? (latestAiMessage?.message || 'Speaking in real-time...')
-                : (latestUserMessage?.message || 'Listening... Speak your query about Aga Khan Hospital.')}
+                ? latestAiMessage?.message || 'Speaking now... / اب بول رہا ہوں...'
+                : latestUserMessage?.message ||
+                  'Speak now... / اب بولیں...'}
             </p>
           </div>
         </div>

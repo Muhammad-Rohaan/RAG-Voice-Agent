@@ -4,35 +4,30 @@ import useRealtimeVoiceAgent from '../hooks/useRealtimeVoiceAgent';
 import ChatWindow from './ChatWindow';
 import VoiceButton from './VoiceButton';
 import RealtimeVoiceVisualizer from './VoiceAgent/RealtimeVoiceVisualizer';
-import { Send, LogOut, Sparkles, Activity, ToggleLeft, ToggleRight, AlertTriangle, Radio } from 'lucide-react';
-
+import { Send, LogOut, Activity, AlertTriangle, Radio, Sparkles, HelpCircle } from 'lucide-react';
 
 export default function ChatScreen({ user, onLogout }) {
   const [input, setInput] = useState('');
   const [useRealtimeMode, setUseRealtimeMode] = useState(true);
+  const [showMobileHelp, setShowMobileHelp] = useState(false);
 
   const ragWsUrl = import.meta.env.VITE_RAG_WS_URL ?? 'wss://akuh-voice-agent.onrender.com';
 
-  // Realtime Audio Socket Voice Agent Hook
   const realtimeVoice = useRealtimeVoiceAgent(ragWsUrl);
-
-  // Web Speech API / Text Chat Hook
   const standardVoice = useVoiceAgent();
 
-  // Active hook depending on selected mode
   const activeAgentState = useRealtimeMode ? realtimeVoice.agentState : standardVoice.agentState;
   const activeMessages = useRealtimeMode
-    ? (realtimeVoice.messages.length > 0 ? realtimeVoice.messages : standardVoice.messages)
+    ? realtimeVoice.messages.length > 0
+      ? realtimeVoice.messages
+      : standardVoice.messages
     : standardVoice.messages;
   const activeError = useRealtimeMode ? realtimeVoice.error : standardVoice.error;
 
   const handleSend = async (textToSend) => {
     const query = textToSend || input;
     if (!query.trim() || activeAgentState === 'processing') return;
-
-    if (!textToSend) {
-      setInput('');
-    }
+    if (!textToSend) setInput('');
 
     if (useRealtimeMode) {
       realtimeVoice.stopAudioPlayback();
@@ -57,85 +52,113 @@ export default function ChatScreen({ user, onLogout }) {
     }
   };
 
+  const handleModeToggle = () => {
+    if (!useRealtimeMode && standardVoice.agentState === 'speaking') {
+      standardVoice.cancelSpeaking();
+    } else if (useRealtimeMode && realtimeVoice.isConnected) {
+      realtimeVoice.disconnect();
+    }
+    setUseRealtimeMode((prev) => !prev);
+  };
+
+  const helpSteps = [
+    {
+      en: 'Press the mic button and speak your question.',
+      ur: 'مائیک بٹن دبائیں اور اپنا سوال بولیں۔',
+    },
+    {
+      en: 'You can ask in English or Urdu.',
+      ur: 'آپ انگریزی یا اردو میں پوچھ سکتے ہیں۔',
+    },
+    {
+      en: 'Or type your question in the box below.',
+      ur: 'یا نیچے خانے میں لکھ کر بھیجیں۔',
+    },
+  ];
+
   return (
     <div className="chat-container">
-      {/* Sidebar Panel */}
       <aside className="chat-sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo">
-            <Activity className="sidebar-logo-icon" size={24} />
-            <span>AKUH Reception</span>
+            <Activity className="sidebar-logo-icon" size={26} />
+            <div>
+              <span>AKUH Reception</span>
+              <span className="logo-urdu">آغا خان ہسپتال استقبالیہ</span>
+            </div>
           </div>
         </div>
 
         <div className="sidebar-section">
-          <h3>Voice Agent Mode</h3>
-          <div className="settings-panel">
-            <button
-              type="button"
-              className={`toggle-setting-btn ${useRealtimeMode ? 'active' : ''}`}
-              onClick={() => {
-                if (!useRealtimeMode && standardVoice.agentState === 'speaking') {
-                  standardVoice.cancelSpeaking();
-                } else if (useRealtimeMode && realtimeVoice.isConnected) {
-                  realtimeVoice.disconnect();
-                }
-                setUseRealtimeMode(prev => !prev);
-              }}
-              title="Toggle between OpenAI Realtime Voice WebSockets and Web Speech API"
-            >
-              <div className="setting-info">
-                <span className="setting-label">Realtime PCM Voice</span>
-                <span className="setting-desc">OpenAI Audio WebSockets</span>
-              </div>
-              {useRealtimeMode ? (
-                <ToggleRight className="toggle-icon active-toggle" size={28} />
-              ) : (
-                <ToggleLeft className="toggle-icon" size={28} />
-              )}
-            </button>
+          <div className="sidebar-section-title">
+            <span className="en">Voice Mode</span>
+            <span className="ur">آواز کا موڈ</span>
           </div>
+          <button
+            type="button"
+            className={`toggle-card ${useRealtimeMode ? 'active' : ''}`}
+            onClick={handleModeToggle}
+            aria-pressed={useRealtimeMode}
+          >
+            <div className="toggle-card-info">
+              <span className="toggle-card-label">
+                {useRealtimeMode ? '📞 Talk Live' : '💬 Type & Talk'}
+              </span>
+              <span className="toggle-card-label-ur">
+                {useRealtimeMode ? 'براہ راست بات کریں' : 'لکھیں یا بولیں'}
+              </span>
+              <span className="toggle-card-desc">
+                {useRealtimeMode ? 'Tap to switch mode' : 'Tap to switch mode'}
+                {' · '}
+                {useRealtimeMode ? 'موڈ بدلنے کے لیے دبائیں' : 'موڈ بدلنے کے لیے دبائیں'}
+              </span>
+            </div>
+            <div className={`toggle-pill ${useRealtimeMode ? 'on' : ''}`} aria-hidden="true" />
+          </button>
         </div>
 
         {!useRealtimeMode && (
           <div className="sidebar-section">
-            <h3>Voice Settings</h3>
-            <div className="settings-panel">
-              <button
-                type="button"
-                className={`toggle-setting-btn ${standardVoice.autoContinue ? 'active' : ''}`}
-                onClick={standardVoice.toggleAutoContinue}
-                title="When enabled, mic will auto-open after AI finishes speaking"
-              >
-                <div className="setting-info">
-                  <span className="setting-label">Hands-free Mode</span>
-                  <span className="setting-desc">Auto-opens microphone</span>
-                </div>
-                {standardVoice.autoContinue ? (
-                  <ToggleRight className="toggle-icon active-toggle" size={28} />
-                ) : (
-                  <ToggleLeft className="toggle-icon" size={28} />
-                )}
-              </button>
+            <div className="sidebar-section-title">
+              <span className="en">Auto Listen</span>
+              <span className="ur">خودکار سننا</span>
             </div>
+            <button
+              type="button"
+              className={`toggle-card ${standardVoice.autoContinue ? 'active' : ''}`}
+              onClick={standardVoice.toggleAutoContinue}
+              aria-pressed={standardVoice.autoContinue}
+            >
+              <div className="toggle-card-info">
+                <span className="toggle-card-label">🎙️ Keep Mic Open</span>
+                <span className="toggle-card-label-ur">مائیک خود بخود کھلتا رہے</span>
+                <span className="toggle-card-desc">
+                  No need to tap again · دوبارہ دبانے کی ضرورت نہیں
+                </span>
+              </div>
+              <div
+                className={`toggle-pill ${standardVoice.autoContinue ? 'on' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
           </div>
         )}
 
         <div className="sidebar-section">
-          <h3>Quick Guidelines</h3>
+          <div className="sidebar-section-title">
+            <span className="en">How to Use</span>
+            <span className="ur">استعمال کا طریقہ</span>
+          </div>
           <div className="sidebar-tips">
-            <div className="tip-item">
-              <span className="tip-num">1</span>
-              <p>Click mic to start live voice session with OpenAI Realtime API.</p>
-            </div>
-            <div className="tip-item">
-              <span className="tip-num">2</span>
-              <p>Speak naturally to interrupt the AI Receptionist anytime.</p>
-            </div>
-            <div className="tip-item">
-              <span className="tip-num">3</span>
-              <p>Ask about hospital departments, doctor timings, and fees.</p>
-            </div>
+            {helpSteps.map((step, index) => (
+              <div className="tip-item" key={index}>
+                <span className="tip-num">{index + 1}</span>
+                <div className="tip-item-text">
+                  <span className="en">{step.en}</span>
+                  <span className="ur">{step.ur}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -149,53 +172,93 @@ export default function ChatScreen({ user, onLogout }) {
               <span className="user-email">{user.email}</span>
             </div>
           </div>
-          <button onClick={onLogout} className="logout-btn" title="Log Out">
-            <LogOut size={18} />
+          <button onClick={onLogout} className="logout-btn" title="Exit / باہر نکلیں">
+            <LogOut size={16} />
+            <span className="logout-label">
+              Exit
+              <span className="logout-ur"> / باہر</span>
+            </span>
           </button>
         </div>
       </aside>
 
-      {/* Main Chat Panel */}
       <main className="chat-main">
-        {/* Chat Header */}
         <header className="chat-header">
           <div className="header-agent-info">
             <div className="agent-avatar-wrapper">
               <Activity className="agent-avatar-icon" size={24} />
-              {activeAgentState !== 'disabled' && <span className="online-indicator"></span>}
+              {activeAgentState !== 'disabled' && <span className="online-indicator" />}
             </div>
             <div className="agent-details">
-              <h2>Hospital AI Receptionist</h2>
-              <p>Aga Khan University Hospital Voice Agent</p>
+              <h2>Hospital Help Desk</h2>
+              <p>Aga Khan University Hospital</p>
+              <span className="agent-urdu">آغا خان یونیورسٹی ہسپتال — مدد کا ڈیسک</span>
             </div>
           </div>
+
           <div className="header-actions">
+            <button
+              type="button"
+              className="mobile-help-btn"
+              onClick={() => setShowMobileHelp((prev) => !prev)}
+              aria-expanded={showMobileHelp}
+              aria-label="Show help / مدد دکھائیں"
+            >
+              <HelpCircle size={20} />
+              <span>Help</span>
+            </button>
+
             <div className={`badge ${useRealtimeMode ? 'mode-badge-active' : ''}`}>
-              {useRealtimeMode ? <Radio size={14} className="badge-icon" /> : <Sparkles size={14} className="badge-icon" />}
-              <span>{useRealtimeMode ? 'Realtime Voice (PCM 24kHz)' : 'Voice RAG Core'}</span>
+              {useRealtimeMode ? (
+                <Radio size={14} className="badge-icon" />
+              ) : (
+                <Sparkles size={14} className="badge-icon" />
+              )}
+              <span>{useRealtimeMode ? 'Live Voice' : 'Type & Talk'}</span>
+              <span className="badge-ur">
+                {useRealtimeMode ? ' / براہ راست' : ' / لکھیں'}
+              </span>
             </div>
           </div>
         </header>
 
-        {/* Realtime Live Visualizer Bar */}
+        {showMobileHelp && (
+          <div className="mobile-help-panel">
+            <p className="mobile-help-title">How to Use / استعمال کا طریقہ</p>
+            <div className="sidebar-tips">
+              {helpSteps.map((step, index) => (
+                <div className="tip-item" key={index}>
+                  <span className="tip-num">{index + 1}</span>
+                  <div className="tip-item-text">
+                    <span className="en">{step.en}</span>
+                    <span className="ur">{step.ur}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {useRealtimeMode && (
           <RealtimeVoiceVisualizer
             agentState={realtimeVoice.agentState}
             volumeLevel={realtimeVoice.volumeLevel}
-            latestAiMessage={[...realtimeVoice.messages].reverse().find(m => m.role === 'agent')}
-            latestUserMessage={[...realtimeVoice.messages].reverse().find(m => m.role === 'user')}
+            latestAiMessage={[...realtimeVoice.messages]
+              .reverse()
+              .find((m) => m.role === 'agent')}
+            latestUserMessage={[...realtimeVoice.messages]
+              .reverse()
+              .find((m) => m.role === 'user')}
           />
         )}
 
-        {/* Error Banner if any voice or API error exists */}
         {activeError && (
-          <div className="voice-agent-error-bar">
-            <AlertTriangle size={16} className="error-bar-icon" />
+          <div className="voice-agent-error-bar" role="alert">
+            <AlertTriangle size={18} className="error-bar-icon" />
             <span>{activeError}</span>
           </div>
         )}
 
-        {/* Chat Thread Scroll Window */}
         <ChatWindow
           messages={activeMessages}
           agentState={activeAgentState}
@@ -203,7 +266,6 @@ export default function ChatScreen({ user, onLogout }) {
           onQuickQuery={handleSend}
         />
 
-        {/* Chat Input Bar */}
         <footer className="chat-footer-bar">
           <div className="input-container">
             <VoiceButton state={activeAgentState} onClick={handleVoiceButtonClick} />
@@ -213,22 +275,34 @@ export default function ChatScreen({ user, onLogout }) {
               onKeyDown={handleKeyPress}
               placeholder={
                 activeAgentState === 'listening'
-                  ? "Listening... Speak directly to the AI Receptionist"
-                  : "Ask about departments, timings, or doctors..."
+                  ? 'Listening... speak now | سن رہا ہوں، بولیں...'
+                  : 'Type your question | اپنا سوال لکھیں...'
               }
               disabled={activeAgentState === 'processing' || activeAgentState === 'disabled'}
               rows={1}
+              aria-label="Type your question / اپنا سوال لکھیں"
             />
             <button
               onClick={() => handleSend()}
               className="send-btn"
-              disabled={activeAgentState === 'processing' || activeAgentState === 'disabled' || !input.trim()}
+              disabled={
+                activeAgentState === 'processing' ||
+                activeAgentState === 'disabled' ||
+                !input.trim()
+              }
+              title="Send / بھیجیں"
+              aria-label="Send message / پیغام بھیجیں"
             >
-              <Send size={18} />
+              <Send size={20} />
             </button>
           </div>
           <p className="disclaimer-text">
-            Disclaimer: The AI Receptionist uses real-time audio models. For acute medical emergencies, immediately proceed to the nearest Emergency Room.
+            <span className="disclaimer-en">
+              For emergencies, go to the Emergency Room immediately.
+            </span>
+            <span className="disclaimer-ur">
+              ایمرجنسی میں فوراً ایمرجنسی روم جائیں۔
+            </span>
           </p>
         </footer>
       </main>

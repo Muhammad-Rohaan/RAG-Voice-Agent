@@ -54,44 +54,64 @@ export default function AuthScreen({ onAuthSuccess }) {
   };
 
   return (
-
     <div className="auth-container">
       <div className="auth-card">
-        {/* Left Side: Hospital Branding Banner */}
         <div className="auth-banner">
-          <div className="banner-overlay"></div>
           <div className="banner-content">
             <div className="brand-logo">
               <Activity className="brand-icon" size={32} />
-              <span>AKUH AI Receptionist</span>
+              <span>AKUH Help Desk</span>
             </div>
-            <h2>Welcome to Aga Khan University Hospital</h2>
-            <p>Your 24/7 intelligent voice and chat companion for appointments, timings, and department info.</p>
+
+            <div className="banner-tagline">
+              <h2>Welcome to Aga Khan University Hospital</h2>
+              <span className="urdu-tagline">آغا خان یونیورسٹی ہسپتال میں خوش آمدید</span>
+              <p>
+                Ask about doctors, clinic timings, and appointments — by voice or chat.
+              </p>
+            </div>
+
             <div className="banner-features">
               <div className="feature-item">
-                <span className="bullet">✦</span> Easy Doctor & Timings Lookups
+                <span className="bullet">✦</span>
+                <div>
+                  <span>Find doctors & clinic timings</span>
+                  <span className="feature-ur">ڈاکٹر اور اوقات تلاش کریں</span>
+                </div>
               </div>
               <div className="feature-item">
-                <span className="bullet">✦</span> Direct Calendar Appointment Booking
+                <span className="bullet">✦</span>
+                <div>
+                  <span>Book appointments easily</span>
+                  <span className="feature-ur">آسانی سے اپائنٹمنٹ بک کریں</span>
+                </div>
               </div>
               <div className="feature-item">
-                <span className="bullet">✦</span> 24/7 Hospital Information System
+                <span className="bullet">✦</span>
+                <div>
+                  <span>Available 24 hours a day</span>
+                  <span className="feature-ur">چوبیس گھنٹے دستیاب</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Side: Form */}
         <div className="auth-form-side">
           <div className="form-header">
             <h3>{isLogin ? 'Sign In' : 'Create Account'}</h3>
+            <span className="urdu-subtitle">
+              {isLogin ? 'داخل ہوں' : 'اکاؤنٹ بنائیں'}
+            </span>
             <p className="form-subtitle">
-              {isLogin ? 'Access the RAG chatbot interface' : 'Sign up to start scheduling appointments'}
+              {isLogin
+                ? 'Enter your details to start talking with the help desk'
+                : 'Sign up to ask hospital questions by voice or text'}
             </p>
           </div>
 
           {error && (
-            <div className="auth-error-banner">
+            <div className="auth-error-banner" role="alert">
               <AlertCircle size={18} className="error-icon" />
               <span>{error}</span>
             </div>
@@ -100,13 +120,15 @@ export default function AuthScreen({ onAuthSuccess }) {
           <form onSubmit={handleSubmit} className="auth-form">
             {!isLogin && (
               <div className="input-group">
-                <label htmlFor="username">Username</label>
+                <label htmlFor="username">
+                  Name / نام
+                </label>
                 <div className="input-wrapper">
                   <User className="input-icon" size={18} />
                   <input
                     type="text"
                     id="username"
-                    placeholder="Enter your username"
+                    placeholder="Your name / اپنا نام"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required={!isLogin}
@@ -116,13 +138,13 @@ export default function AuthScreen({ onAuthSuccess }) {
             )}
 
             <div className="input-group">
-              <label htmlFor="email">Email Address</label>
+              <label htmlFor="email">Email / ای میل</label>
               <div className="input-wrapper">
                 <Mail className="input-icon" size={18} />
                 <input
                   type="email"
                   id="email"
-                  placeholder="Enter your email"
+                  placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -131,7 +153,7 @@ export default function AuthScreen({ onAuthSuccess }) {
             </div>
 
             <div className="input-group">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">Password / پاس ورڈ</label>
               <div className="input-wrapper">
                 <Lock className="input-icon" size={18} />
                 <input
@@ -146,6 +168,7 @@ export default function AuthScreen({ onAuthSuccess }) {
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -158,19 +181,19 @@ export default function AuthScreen({ onAuthSuccess }) {
               ) : isLogin ? (
                 <>
                   <LogIn size={18} />
-                  <span>Sign In</span>
+                  <span>Sign In / داخل ہوں</span>
                 </>
               ) : (
                 <>
                   <UserPlus size={18} />
-                  <span>Register</span>
+                  <span>Register / رجسٹر</span>
                 </>
               )}
             </button>
           </form>
 
           <div className="auth-divider">
-            <span>OR</span>
+            <span>OR / یا</span>
           </div>
 
           <div className="google-login-wrapper">
@@ -181,23 +204,35 @@ export default function AuthScreen({ onAuthSuccess }) {
               theme="outline"
               size="large"
               width="100%"
-              text={isLogin ? "signin_with" : "signup_with"}
+              text={isLogin ? 'signin_with' : 'signup_with'}
             />
           </div>
 
           <div className="auth-toggle-link">
             {isLogin ? (
               <p>
-                Don't have an account?{' '}
-                <button type="button" onClick={() => { setIsLogin(false); setError(''); }}>
-                  Sign Up
+                New here?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(false);
+                    setError('');
+                  }}
+                >
+                  Sign Up / رجسٹر
                 </button>
               </p>
             ) : (
               <p>
                 Already have an account?{' '}
-                <button type="button" onClick={() => { setIsLogin(true); setError(''); }}>
-                  Sign In
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(true);
+                    setError('');
+                  }}
+                >
+                  Sign In / داخل ہوں
                 </button>
               </p>
             )}
@@ -207,4 +242,3 @@ export default function AuthScreen({ onAuthSuccess }) {
     </div>
   );
 }
-

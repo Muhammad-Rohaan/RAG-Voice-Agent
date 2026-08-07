@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mic, MicOff, Loader, Volume2, Radio } from 'lucide-react';
+import { Mic, MicOff, Loader, Volume2 } from 'lucide-react';
 
 export default function VoiceButton({ state, onClick }) {
   const getButtonContent = () => {
@@ -7,14 +7,14 @@ export default function VoiceButton({ state, onClick }) {
       case 'connecting':
         return (
           <div className="voice-btn-inner connecting-state">
-            <Loader className="voice-icon spin-icon" size={24} />
+            <Loader className="voice-icon spin-icon" size={26} />
           </div>
         );
       case 'ready':
       case 'listening':
         return (
           <div className="voice-btn-inner listening-state">
-            <Mic className="voice-icon pulse-icon" size={24} />
+            <Mic className="voice-icon pulse-icon" size={26} />
             <div className="glow-ring glow-1"></div>
             <div className="glow-ring glow-2"></div>
           </div>
@@ -22,7 +22,7 @@ export default function VoiceButton({ state, onClick }) {
       case 'processing':
         return (
           <div className="voice-btn-inner processing-state">
-            <Loader className="voice-icon spin-icon" size={24} />
+            <Loader className="voice-icon spin-icon" size={26} />
             <div className="orbit-line"></div>
           </div>
         );
@@ -37,20 +37,20 @@ export default function VoiceButton({ state, onClick }) {
               <span className="bar bar-5"></span>
               <span className="bar bar-6"></span>
             </div>
-            <Volume2 className="voice-icon speak-icon" size={20} />
+            <Volume2 className="voice-icon speak-icon" size={22} />
           </div>
         );
       case 'disabled':
         return (
           <div className="voice-btn-inner disabled-state">
-            <MicOff className="voice-icon" size={24} />
+            <MicOff className="voice-icon" size={26} />
           </div>
         );
       case 'idle':
       default:
         return (
           <div className="voice-btn-inner idle-state">
-            <Mic className="voice-icon" size={24} />
+            <Mic className="voice-icon" size={26} />
           </div>
         );
     }
@@ -59,19 +59,19 @@ export default function VoiceButton({ state, onClick }) {
   const getButtonTitle = () => {
     switch (state) {
       case 'connecting':
-        return 'Connecting to Realtime Voice Server...';
+        return 'Connecting... / رابطہ ہو رہا ہے';
       case 'ready':
       case 'listening':
-        return 'Listening... Click to stop or talk';
+        return 'Listening — tap to stop / سن رہا ہوں — بند کرنے کے لیے دبائیں';
       case 'processing':
-        return 'Thinking...';
+        return 'Thinking... / سوچ رہا ہوں';
       case 'speaking':
-        return 'AI is speaking. Click to interrupt';
+        return 'Speaking — tap to stop / بول رہا ہوں — روکنے کے لیے دبائیں';
       case 'disabled':
-        return 'Speech APIs are not supported in this browser';
+        return 'Voice not available / آواز دستیاب نہیں';
       case 'idle':
       default:
-        return 'Click to start speaking';
+        return 'Tap to talk / بات کرنے کے لیے دبائیں';
     }
   };
 
@@ -81,9 +81,9 @@ export default function VoiceButton({ state, onClick }) {
       disabled={state === 'disabled'}
       className={`voice-action-btn state-${state}`}
       title={getButtonTitle()}
+      aria-label={getButtonTitle()}
     >
       {getButtonContent()}
     </button>
   );
 }
-

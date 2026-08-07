@@ -5,7 +5,6 @@ import { Activity, Bot } from 'lucide-react';
 export default function ChatWindow({ messages, agentState, username, onQuickQuery }) {
   const chatEndRef = useRef(null);
 
-  // Auto-scroll to bottom of conversation
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, agentState]);
@@ -13,11 +12,23 @@ export default function ChatWindow({ messages, agentState, username, onQuickQuer
   const getStatusIndicator = () => {
     switch (agentState) {
       case 'listening':
-        return { text: 'Listening...', class: 'status-listening', icon: '🎤' };
+        return {
+          text: 'Listening... / سن رہا ہوں',
+          class: 'status-listening',
+          icon: '🎤',
+        };
       case 'processing':
-        return { text: 'Thinking...', class: 'status-processing', icon: '🤔' };
+        return {
+          text: 'Thinking... / سوچ رہا ہوں',
+          class: 'status-processing',
+          icon: '🤔',
+        };
       case 'speaking':
-        return { text: 'Speaking...', class: 'status-speaking', icon: '🔊' };
+        return {
+          text: 'Speaking... / بول رہا ہوں',
+          class: 'status-speaking',
+          icon: '🔊',
+        };
       case 'idle':
       default:
         return null;
@@ -30,24 +41,49 @@ export default function ChatWindow({ messages, agentState, username, onQuickQuer
     <div className="chat-thread">
       {messages.length === 0 && agentState === 'idle' ? (
         <div className="welcome-state">
-          <Activity className="welcome-logo" size={64} />
-          <h2>Hello, {username}!</h2>
+          <div className="welcome-logo-wrapper">
+            <Activity size={44} />
+          </div>
+          <h2>Hello, {username}! / السلام علیکم</h2>
+          <span className="welcome-urdu">آپ کیسے ہیں؟</span>
           <p>
-            I am your Aga Khan Hospital AI Voice Receptionist. Click the microphone button and talk naturally to ask about clinics, check department schedules, or book appointments.
+            Press the mic button and ask about clinics, doctors, timings, or appointments.
           </p>
+          <span className="welcome-urdu-desc">
+            مائیک بٹن دبائیں اور کلینک، ڈاکٹر، اوقات یا اپائنٹمنٹ کے بارے میں پوچھیں۔
+          </span>
+
           <div className="welcome-cards">
-            <div className="w-card" onClick={() => onQuickQuery("What are the OPD clinic timings?")}>
-              <h4>🏥 timings & locations</h4>
-              <p>"Where is the cardiology department located?"</p>
-            </div>
-            <div className="w-card" onClick={() => onQuickQuery("What are the dentistry packages?")}>
-              <h4>🦷 services & fees</h4>
-              <p>"What is the dental consultation fee?"</p>
-            </div>
-            <div className="w-card" onClick={() => onQuickQuery("I want to book an appointment")}>
-              <h4>📅 schedule visit</h4>
-              <p>"Help me book an appointment with Dr. Ali"</p>
-            </div>
+            <button
+              type="button"
+              className="w-card"
+              onClick={() => onQuickQuery('What are the OPD clinic timings?')}
+            >
+              <span className="w-card-emoji">🏥</span>
+              <h4>Clinic Timings</h4>
+              <span className="w-card-ur">کلینک کے اوقات</span>
+              <p>&quot;Cardiology department kahan hai?&quot;</p>
+            </button>
+            <button
+              type="button"
+              className="w-card"
+              onClick={() => onQuickQuery('What are the dentistry packages?')}
+            >
+              <span className="w-card-emoji">🦷</span>
+              <h4>Services & Fees</h4>
+              <span className="w-card-ur">سروسز اور فیس</span>
+              <p>&quot;Dental checkup ki fees kitni hai?&quot;</p>
+            </button>
+            <button
+              type="button"
+              className="w-card"
+              onClick={() => onQuickQuery('I want to book an appointment')}
+            >
+              <span className="w-card-emoji">📅</span>
+              <h4>Book Appointment</h4>
+              <span className="w-card-ur">اپائنٹمنٹ بک کریں</span>
+              <p>&quot;Dr. Ali se appointment chahiye&quot;</p>
+            </button>
           </div>
         </div>
       ) : (
@@ -78,7 +114,7 @@ export default function ChatWindow({ messages, agentState, username, onQuickQuer
               <span className="status-text">{status.text}</span>
             </div>
           )}
-          
+
           <div ref={chatEndRef} />
         </div>
       )}
