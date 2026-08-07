@@ -1,7 +1,36 @@
 import Groq from "groq-sdk";
+import { writeFile } from "node:fs/promises";
+import { translate } from "free-translate";
 import { queryChroma } from '../Pipes/QueryPipeline.js';
 import dotenv from 'dotenv';
 dotenv.config();
+
+export const generatePkVoice = async (textMsgToConvert) => {
+    try {
+        // Translate from English ('en') to Urdu ('ur')
+        const translatedText = await translate(textMsgToConvert, { from: 'en', to: 'ur' });
+
+        const res = await fetch("https://api.upliftai.org/v1/synthesis/text-to-speech", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${process.env.UPLIFT_API}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                voiceId: "diabetologist",
+                text: translatedText,
+                outputFormat: "MP3_22050_128",
+            }),
+        });
+
+        await writeFile(`speech${new Date().getTime()}.mp3`, Buffer.from(await res.arrayBuffer()));
+
+    } catch (error) {
+        console.log("Error in generatePkVoice()");
+        console.log(error);
+
+    }
+}
 
 export const sendQueryToGroqLLM = async (userQuery) => {
 

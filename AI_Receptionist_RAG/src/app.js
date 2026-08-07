@@ -4,7 +4,7 @@ import cors from "cors";
 import http from "http";
 import { WebSocketServer } from "ws";
 import { createChunks, loadDocs } from "./Controllers/RAG.controller.js";
-import { sendQueryToGroqLLM } from "./Controllers/GroqLLM.controller.js";
+import { generatePkVoice, sendQueryToGroqLLM } from "./Controllers/GroqLLM.controller.js";
 // Dynamic import of startVoiceAgentSession will be done in the route handler
 import { embedding } from "./Pipes/IngestionPipeline.js";
 
@@ -75,6 +75,8 @@ app.post('/chat', async (req, res) => {
             return res.status(400).json({ error: 'userQuery is required' });
         }
         const answer = await sendQueryToGroqLLM(userQuery);
+        // convert answer into PK Voice...
+        const inPkVoice = await generatePkVoice(answer); 
         res.status(200).json({ answer });
     } catch (error) {
         console.error("Error in /chat endpoint:", error);
