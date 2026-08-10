@@ -1,32 +1,7 @@
 import axios from 'axios';
 import ChatModel from '../Models/chat.model.js';
 
-/**
- * Helper to perform an axios POST with simple exponential backoff retry.
- * Retries on network errors or HTTP 5xx responses (including 502 Bad Gateway).
- * Returns the successful response or throws the last encountered error.
- */
-async function axiosPostWithRetry(url, payload, { timeout = 60000, maxRetries = 3, baseDelayMs = 500 } = {}) {
-    let lastError;
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-            const response = await axios.post(url, payload, { timeout });
-            // If response is OK (2xx) return it
-            return response;
-        } catch (err) {
-            lastError = err;
-            // Retry on network errors or 5xx status codes
-            const status = err.response?.status;
-            const shouldRetry = !err.response || (status >= 500 && status < 600);
-            if (!shouldRetry || attempt === maxRetries) {
-                throw err; // rethrow if not retryable or out of attempts
-            }
-            const delay = Math.min(baseDelayMs * Math.pow(1.5, attempt), 3000);
-            await new Promise(r => setTimeout(r, delay));
-        }
-    }
-    throw lastError;
-}
+
 export const chatWithAgent = async (req, res) => {
     try {
         const { userQuery } = req.body;
@@ -42,7 +17,11 @@ export const chatWithAgent = async (req, res) => {
                 : `https://${ragApiUrl}`;
         }
 
-        const ragServiceResponse = await axiosPostWithRetry(`${ragApiUrl}/chat`, { userQuery }, { timeout: 60000, maxRetries: 3 });
+        const ragServiceResponse = await axios.post(`${ragApiUrl}/chat`, {
+            userQuery,
+        }, {
+            timeout: 60000,
+        });
 
         const agentResponse = ragServiceResponse.data.answer;
         const audioId = ragServiceResponse.data.audioId;
@@ -65,15 +44,9 @@ export const chatWithAgent = async (req, res) => {
 
     } catch (error) {
         console.error("Error in chatWithAgent():", error);
-        const status = error.response?.status;
-        let friendlyMessage = error.message;
-        if (status === 502) {
-            friendlyMessage = "RAG service is temporarily unavailable (Bad Gateway). Please try again later.";
-        } else if (status >= 500) {
-            friendlyMessage = "RAG service encountered an error. Please retry later.";
-        }
+        const errorMessage = error.response?.data?.error || error.message;
         res.status(500).json({
-            err: `Error in chatWithAgent(): ${friendlyMessage}`
+            err: `Error in chatWithAgent(): ${errorMessage}`
         });
     }
 }

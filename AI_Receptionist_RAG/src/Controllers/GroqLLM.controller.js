@@ -2,7 +2,6 @@ import Groq from "groq-sdk";
 import { writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { translate } from "free-translate";
 import { queryChroma } from '../Pipes/QueryPipeline.js';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -41,10 +40,55 @@ dotenv.config();
 //     }
 // }
 
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+/**
+ * Translate English text into Urdu using Groq.
+ *
+ * This replaces free-translate.
+ *
+ * @param {string} englishText
+ * @returns {Promise<string>}
+ */
+const translateToUrdu = async (englishText) => {
+    try {
+        const completion = await groq.chat.completions.create({
+            model: "openai/gpt-oss-20b",
+
+            messages: [
+                {
+                    role: "system",
+                    content:
+                        "You are a professional English to Urdu translator. " +
+                        "Translate the given English text into natural, clear and well-structured Urdu. " +
+                        "Preserve names, medical terms, numbers, and important information. " +
+                        "The words should be pronounced properly and should be understandable for listeners of Pakistan. " +
+                        "Return ONLY the Urdu translation. Do not add explanations.",
+                },
+                {
+                    role: "user",
+                    content: englishText,
+                },
+            ],
+
+            temperature: 0.2,
+        });
+
+        return completion.choices[0]?.message?.content?.trim() || englishText;
+    } catch (error) {
+        console.error("Groq Urdu translation error:", error.message);
+
+        // Fallback:
+        // If translation fails, return the original English text
+        // instead of breaking the entire voice pipeline.
+        return englishText;
+    }
+};
+
 export const generatePkVoice = async (textMsgToConvert, audioId) => {
     try {
         // Translate message text from English to Urdu
-        const translatedText = await translate(textMsgToConvert, { from: 'en', to: 'ur' });
+        const translatedText = await translateToUrdu(textMsgToConvert);
         const textToSynthesize = translatedText.text || translatedText;
 
         const res = await fetch("https://api.upliftai.org/v1/synthesis/text-to-speech", {
@@ -76,7 +120,6 @@ export const generatePkVoice = async (textMsgToConvert, audioId) => {
 
 export const sendQueryToGroqLLM = async (userQuery) => {
 
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
     // Step 1 — retrieve relevant chunks from ChromaDB
     const relevantChunks = await queryChroma(userQuery);
