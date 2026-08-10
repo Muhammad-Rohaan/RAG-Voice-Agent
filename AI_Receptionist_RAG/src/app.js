@@ -109,16 +109,20 @@ app.post('/chat', async (req, res) => {
 
         // Get text response from your LLM/RAG pipeline
         const answer = await sendQueryToGroqLLM(userQuery);
-        
+
         // Generate a unique identifier for this turn's audio
         const audioId = Date.now().toString();
 
-        // Trigger background text-to-speech without blocking the text response
-        generatePkVoice(answer, audioId).catch(err =>
-            console.error('Background audio generation failed:', err.message)
-        );
+        // Await TTS so the audio file is ready before the frontend receives the response.
+        // This adds a few seconds to the "Thinking..." phase but eliminates all 404 polling
+        // and lets the audio play instantly when the text appears on the client.
+        try {
+            await generatePkVoice(answer, audioId);
+        } catch (ttsErr) {
+            console.error('generatePkVoice() failed (text response will still be sent):', ttsErr.message);
+        }
 
-        // Immediately return the answer text and unique audioId
+        // Return the answer text and unique audioId (audio file is already on disk)
         return res.status(200).json({ answer, audioId });
     } catch (error) {
         console.error("Error in /chat endpoint:", error);
