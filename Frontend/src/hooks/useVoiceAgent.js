@@ -65,7 +65,8 @@ export default function useVoiceAgent() {
 
       setMessages(prev => [...prev, agentMsg]);
       setAgentState('speaking');
-      speak(data.audioUrl || data.speechUrl || 'speech.mp3');
+      // Pass the answer text directly — Web Speech API will read it aloud without needing an MP3 file
+      speak(data.message || data.answer || '');
     } catch (err) {
       console.error("Error communicating with RAG backend:", err);
       setError(err.message || 'Error communicating with server.');
