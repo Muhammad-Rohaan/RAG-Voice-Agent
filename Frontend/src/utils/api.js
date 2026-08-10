@@ -64,7 +64,7 @@ export const api = {
         request('/auth/users'),
 
     sendMessage: (userQuery) =>
-        request('/chat', {
+        request('/ai/chat', {
             method: 'POST',
             body: JSON.stringify({ userQuery }),
         }),
