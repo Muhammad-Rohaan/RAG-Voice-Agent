@@ -18,16 +18,7 @@ const app = express();
 
 const port = process.env.PORT || 9000;
 
-app.use(express.json());
-app.use(express.static(path.resolve('.')));
-
-
-
-// for Voice Session:
-const server = http.createServer(app);
-export const wss = new WebSocketServer({ server });
-
-const allowedOrigins = (process.env.BACKEND_URL || "http://localhost:5000,http://localhost:8000,http://localhost:5173")
+const allowedOrigins = (process.env.BACKEND_URL ?? "http://localhost:5000,http://localhost:8000,http://localhost:5173")
     .split(",")
     .map(origin => origin.trim())
     .filter(Boolean);
@@ -35,35 +26,22 @@ const allowedOrigins = (process.env.BACKEND_URL || "http://localhost:5000,http:/
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
             callback(null, true);
         } else {
             callback(null, true);
         }
     },
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"]
 }));
 
+app.use(express.json());
 
-async function indexingPipeline() {
-    const docs = await loadDocs();
-    console.log(`DONE 1: Loaded ${docs.length} documents.`);
-
-    const chunks = await createChunks(docs);
-    console.log(`DONE 2: Created ${chunks.length} chunks.`);
-
-    await embedding(chunks);
-    console.log("DONE 3: All chunks stored in ChromaDB.");
-}
-// await indexingPipeline();  // for one time only
-
-// const result = await sendQueryToLLM("What are the radiology operating hours?");
-// console.log("\n── AI Receptionist Answer ──────────────────");
-// console.log(result);
-// console.log("────────────────────────────────────────────\n");
-
+// for Voice Session:
+const server = http.createServer(app);
+export const wss = new WebSocketServer({ server });
 
 app.get('/', (req, res) => {
     res.send('Welcome to AKUH RAG Service');
@@ -76,10 +54,26 @@ app.get('/health', (req, res) => {
 app.get('/speech.mp3', (req, res) => {
     const tmpPath = path.join(os.tmpdir(), 'speech.mp3');
     const localPath = path.resolve('speech.mp3');
-    const filePath = existsSync(tmpPath) ? tmpPath : localPath;
-    res.sendFile(filePath, { headers: { 'Content-Type': 'audio/mpeg' } });
-})
+    const filePath = existsSync(tmpPath) ? tmpPath : (existsSync(localPath) ? localPath : null);
 
+    if (req.headers.origin) {
+        res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Content-Type', 'audio/mpeg');
+
+    if (filePath) {
+        res.sendFile(filePath, { headers: { 'Content-Type': 'audio/mpeg' } });
+    } else {
+        res.status(404).json({ error: 'Speech audio not found' });
+    }
+});
+
+app.use(express.static(path.resolve('.')));
+
+/*
 app.post('/chat', async (req, res) => {
     try {
         const { userQuery } = req.body;
@@ -101,6 +95,51 @@ app.post('/chat', async (req, res) => {
     } catch (error) {
         console.error("Error in /chat endpoint:", error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    }
+});
+*/
+
+
+app.post('/chat', async (req, res) => {
+    try {
+        const { userQuery } = req.body;
+        if (!userQuery) {
+            return res.status(400).json({ error: 'userQuery is required' });
+        }
+
+        // Get text response from your LLM/RAG pipeline
+        const answer = await sendQueryToGroqLLM(userQuery);
+        
+        // Generate a unique identifier for this turn's audio
+        const audioId = Date.now().toString();
+
+        // Trigger background text-to-speech without blocking the text response
+        generatePkVoice(answer, audioId).catch(err =>
+            console.error('Background audio generation failed:', err.message)
+        );
+
+        // Immediately return the answer text and unique audioId
+        return res.status(200).json({ answer, audioId });
+    } catch (error) {
+        console.error("Error in /chat endpoint:", error);
+        return res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    }
+});
+
+// Dynamic Audio Endpoint with 404 Pending Handling
+app.get('/speech/:id.mp3', (req, res) => {
+    const audioId = req.params.id;
+    const tmpPath = path.join(os.tmpdir(), `speech_${audioId}.mp3`);
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    if (existsSync(tmpPath)) {
+        res.setHeader('Content-Type', 'audio/mpeg');
+        return res.sendFile(tmpPath);
+    } else {
+        // Return 404 while generation is in progress so the frontend can retry
+        return res.status(404).json({ error: 'Audio file still generating', status: 'pending' });
     }
 });
 

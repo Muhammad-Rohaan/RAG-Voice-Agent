@@ -12,7 +12,9 @@ export const chatWithAgent = async (req, res) => {
 
         let ragApiUrl = process.env.RAG_API_URL ?? "http://localhost:9000";
         if (!/^https?:\/\//i.test(ragApiUrl)) {
-            ragApiUrl = `https://${ragApiUrl}`;
+            ragApiUrl = (ragApiUrl.includes('localhost') || ragApiUrl.includes('127.0.0.1'))
+                ? `http://${ragApiUrl}`
+                : `https://${ragApiUrl}`;
         }
 
         const ragServiceResponse = await axios.post(`${ragApiUrl}/chat`, {
@@ -22,6 +24,7 @@ export const chatWithAgent = async (req, res) => {
         });
 
         const agentResponse = ragServiceResponse.data.answer;
+        const audioId = ragServiceResponse.data.audioId;
 
         const chat = new ChatModel({
             userId: req.user?.id,
@@ -35,7 +38,7 @@ export const chatWithAgent = async (req, res) => {
             _id: chat._id,
             message: agentResponse,
             userMessage: userQuery,
-            audioUrl: `${ragApiUrl}/speech.mp3`,
+            audioUrl: audioId ? `${ragApiUrl}/speech/${audioId}.mp3` : `${ragApiUrl}/speech.mp3`,
             createdAt: chat.createdAt
         });
 
@@ -73,8 +76,9 @@ export const talkWithAgent = async (req, res) => {
 
         let ragApiUrl = process.env.RAG_API_URL ?? "http://localhost:9000";
         if (!/^https?:\/\//i.test(ragApiUrl)) {
-            // ragApiUrl = `http://${ragApiUrl}`;
-            ragApiUrl = `https://${ragApiUrl}`; // use when on PRODUCTION
+            ragApiUrl = (ragApiUrl.includes('localhost') || ragApiUrl.includes('127.0.0.1'))
+                ? `http://${ragApiUrl}`
+                : `https://${ragApiUrl}`;
         }
         const ragServiceResponse = await axios.post(`${ragApiUrl}/voice/start-session`, {
             userQuery: queryToSend,

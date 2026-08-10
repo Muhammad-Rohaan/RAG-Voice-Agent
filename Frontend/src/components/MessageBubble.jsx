@@ -37,7 +37,7 @@ export default function MessageBubble({ message, onPlayAudio }) {
           )}
         </div>
         <div className="message-footer">
-          {role === 'agent' && onPlayAudio && (
+          {/* {role === 'agent' && onPlayAudio && (
             <button
               type="button"
               className={`play-urdu-btn ${isPlaying ? 'playing' : ''}`}
@@ -47,7 +47,7 @@ export default function MessageBubble({ message, onPlayAudio }) {
               {isPlaying ? <Loader className="spin-icon" size={13} /> : <Volume2 size={13} />}
               <span>{isPlaying ? 'Playing Audio...' : 'Listen Urdu / اردو آواز'}</span>
             </button>
-          )}
+          )} */}
           {role !== 'system' && (
             <span className="message-time">
               {new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

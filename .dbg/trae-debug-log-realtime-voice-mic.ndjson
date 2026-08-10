@@ -1,5 +1,0 @@
-{"sessionId":"realtime-voice-mic","runId":"pre","hypothesisId":"D","location":"useRealtimeVoiceAgent.js:connect","msg":"[DEBUG] connect called","data":{"wsUrl":"wss://akuh-voice-agent.onrender.com"},"ts":1786343865492,"traceId":""}
-{"sessionId":"realtime-voice-mic","runId":"pre","hypothesisId":"A","location":"useRealtimeVoiceAgent.js:initMicrophoneStream","msg":"[DEBUG] mic init start","data":{},"ts":1786343865495,"traceId":""}
-{"sessionId":"realtime-voice-mic","runId":"pre","hypothesisId":"A","location":"useRealtimeVoiceAgent.js:initMicrophoneStream","msg":"[DEBUG] mic init ok","data":{"audioCtxSampleRate":24000},"ts":1786343868046,"traceId":""}
-{"sessionId":"realtime-voice-mic","runId":"pre","hypothesisId":"D","location":"useRealtimeVoiceAgent.js:ws.onopen","msg":"[DEBUG] ws open","data":{},"ts":1786343871888,"traceId":""}
-{"sessionId":"realtime-voice-mic","runId":"pre","hypothesisId":"D","location":"useRealtimeVoiceAgent.js:ws.onclose","msg":"[DEBUG] ws close","data":{},"ts":1786344378859,"traceId":""}

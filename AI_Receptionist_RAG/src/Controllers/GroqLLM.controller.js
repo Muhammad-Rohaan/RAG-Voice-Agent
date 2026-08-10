@@ -7,10 +7,45 @@ import { queryChroma } from '../Pipes/QueryPipeline.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const generatePkVoice = async (textMsgToConvert) => {
+// export const generatePkVoice = async (textMsgToConvert) => {
+//     try {
+//         // Translate from English ('en') to Urdu ('ur')
+//         const translatedText = await translate(textMsgToConvert, { from: 'en', to: 'ur' });
+
+//         const res = await fetch("https://api.upliftai.org/v1/synthesis/text-to-speech", {
+//             method: "POST",
+//             headers: {
+//                 Authorization: `Bearer ${process.env.UPLIFT_API}`,
+//                 "Content-Type": "application/json",
+//             },
+//             body: JSON.stringify({
+//                 voiceId: "diabetologist",
+//                 text: translatedText,
+//                 outputFormat: "MP3_22050_128",
+//             }),
+//         });
+
+//         if (!res.ok) {
+//             throw new Error(`UpliftAI API error: ${res.status} ${res.statusText}`);
+//         }
+
+//         const audioBuffer = Buffer.from(await res.arrayBuffer());
+
+//         // Use /tmp (writable on Render) instead of CWD (read-only in production)
+//         const tmpDir = os.tmpdir();
+//         await writeFile(path.join(tmpDir, "speech.mp3"), audioBuffer);
+//         await writeFile(path.join(tmpDir, `speech${new Date().getTime()}.mp3`), audioBuffer);
+
+//     } catch (error) {
+//         console.log("Error in generatePkVoice():", error.message);
+//     }
+// }
+
+export const generatePkVoice = async (textMsgToConvert, audioId) => {
     try {
-        // Translate from English ('en') to Urdu ('ur')
+        // Translate message text from English to Urdu
         const translatedText = await translate(textMsgToConvert, { from: 'en', to: 'ur' });
+        const textToSynthesize = translatedText.text || translatedText;
 
         const res = await fetch("https://api.upliftai.org/v1/synthesis/text-to-speech", {
             method: "POST",
@@ -20,7 +55,7 @@ export const generatePkVoice = async (textMsgToConvert) => {
             },
             body: JSON.stringify({
                 voiceId: "diabetologist",
-                text: translatedText,
+                text: textToSynthesize,
                 outputFormat: "MP3_22050_128",
             }),
         });
@@ -30,16 +65,14 @@ export const generatePkVoice = async (textMsgToConvert) => {
         }
 
         const audioBuffer = Buffer.from(await res.arrayBuffer());
-
-        // Use /tmp (writable on Render) instead of CWD (read-only in production)
         const tmpDir = os.tmpdir();
-        await writeFile(path.join(tmpDir, "speech.mp3"), audioBuffer);
-        await writeFile(path.join(tmpDir, `speech${new Date().getTime()}.mp3`), audioBuffer);
 
+        // Save file uniquely using the provided audioId
+        await writeFile(path.join(tmpDir, `speech_${audioId}.mp3`), audioBuffer);
     } catch (error) {
-        console.log("Error in generatePkVoice():", error.message);
+        console.error("Error in generatePkVoice():", error.message);
     }
-}
+};
 
 export const sendQueryToGroqLLM = async (userQuery) => {
 
