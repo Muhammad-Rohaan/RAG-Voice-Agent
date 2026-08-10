@@ -88,10 +88,10 @@ app.post('/chat', async (req, res) => {
         }
         const answer = await sendQueryToGroqLLM(userQuery);
 
-        // Fire voice generation in the background — don't await or block the response
-        generatePkVoice(answer).catch(err =>
-            console.error("Background generatePkVoice() failed:", err.message)
-        );
+        // Await voice generation — MP3 must be ready before we respond so the
+        // client can immediately fetch and play it. The underlying crash bugs
+        // (read-only CWD, missing !res.ok check) have been fixed.
+        await generatePkVoice(answer);
 
         res.status(200).json({ answer });
     } catch (error) {

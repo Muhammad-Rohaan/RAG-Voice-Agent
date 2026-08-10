@@ -1,130 +1,140 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+const RAG_BASE_URL = import.meta.env.VITE_RAG_API_BASE_URL ?? 'http://localhost:9000';
+
+// Fetch the MP3 as a blob, with retries and exponential backoff.
+// Returns a blob URL string on success, or throws after all retries fail.
+async function fetchAudioBlob(url, maxRetries = 3, baseDelayMs = 1500) {
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('audio')) throw new Error(`Not audio: ${contentType}`);
+            const blob = await response.blob();
+            if (blob.size < 1024) throw new Error(`Audio file too small (${blob.size} bytes) — likely not ready yet`);
+            return URL.createObjectURL(blob);
+        } catch (err) {
+            lastError = err;
+            if (attempt < maxRetries) {
+                const delay = baseDelayMs * Math.pow(1.5, attempt);
+                console.warn(`[useSpeechSynthesis] Attempt ${attempt + 1} failed: ${err.message}. Retrying in ${Math.round(delay)}ms…`);
+                await new Promise(r => setTimeout(r, delay));
+            }
+        }
+    }
+    throw lastError;
+}
+
 export default function useSpeechSynthesis({ onStart, onEnd, onError } = {}) {
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [error, setError] = useState('');
-  const audioRef = useRef(null);
-  const utteranceRef = useRef(null);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [error, setError] = useState('');
+    const audioRef = useRef(null);
+    const blobUrlRef = useRef(null);
+    const cancelledRef = useRef(false);   // prevents stale async continuations
 
-  const cancelWebSpeech = () => {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    utteranceRef.current = null;
-  };
-
-  const cancelAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
-  };
-
-  const cancel = useCallback(() => {
-    cancelWebSpeech();
-    cancelAudio();
-    setIsSpeaking(false);
-  }, []);
-
-  // Speak using Web Speech API (primary — works everywhere, no file needed)
-  const speakWithWebAPI = useCallback((text) => {
-    if (!window.speechSynthesis) return false;
-
-    cancelWebSpeech();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utteranceRef.current = utterance;
-
-    // Pick a natural English voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(v => v.lang === 'en-US' && !v.name.includes('Google')) ||
-                      voices.find(v => v.lang.startsWith('en')) ||
-                      voices[0];
-    if (preferred) utterance.voice = preferred;
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      setError('');
-      if (onStart) onStart();
+    // Release any previously created blob URL to avoid memory leaks
+    const releaseBlobUrl = () => {
+        if (blobUrlRef.current) {
+            URL.revokeObjectURL(blobUrlRef.current);
+            blobUrlRef.current = null;
+        }
     };
 
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      utteranceRef.current = null;
-      if (onEnd) onEnd();
-    };
-
-    utterance.onerror = (e) => {
-      // 'interrupted' is normal when cancel() is called — not a real error
-      if (e.error === 'interrupted' || e.error === 'canceled') return;
-      console.error('SpeechSynthesis error:', e.error);
-      setIsSpeaking(false);
-      utteranceRef.current = null;
-      if (onError) onError('Audio playback failed.');
-    };
-
-    window.speechSynthesis.speak(utterance);
-    return true;
-  }, [onStart, onEnd, onError]);
-
-  // speak() — accepts either a plain text string or an audioUrl
-  // For the text-chat flow, the backend now sends `answerText` — speak that directly.
-  const speak = useCallback((audioSourceOrText, plainText = null) => {
-    cancel();
-
-    // If we have plain text, always prefer Web Speech API
-    if (plainText && typeof plainText === 'string' && plainText.trim()) {
-      speakWithWebAPI(plainText);
-      return;
-    }
-
-    // If the source looks like plain text (not a URL), use Web Speech API
-    const isUrl = typeof audioSourceOrText === 'string' &&
-      (audioSourceOrText.startsWith('http') || audioSourceOrText.startsWith('/') || audioSourceOrText.endsWith('.mp3'));
-
-    if (!isUrl && typeof audioSourceOrText === 'string' && audioSourceOrText.trim()) {
-      speakWithWebAPI(audioSourceOrText);
-      return;
-    }
-
-    // Fallback: try MP3 file from URL
-    if (isUrl) {
-      const timestamp = Date.now();
-      const url = audioSourceOrText.includes('?') ? audioSourceOrText : `${audioSourceOrText}?t=${timestamp}`;
-      const audio = new Audio();
-      audioRef.current = audio;
-
-      audio.onplay = () => { setIsSpeaking(true); setError(''); if (onStart) onStart(); };
-      audio.onended = () => { setIsSpeaking(false); audioRef.current = null; if (onEnd) onEnd(); };
-      audio.onerror = () => {
-        console.warn('MP3 audio failed, falling back to Web Speech API');
-        cancelAudio();
-        // Fall back to web speech with the URL as text won't work, just fire onEnd
+    const cancel = useCallback(() => {
+        cancelledRef.current = true;
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+            audioRef.current = null;
+        }
+        releaseBlobUrl();
         setIsSpeaking(false);
-        if (onEnd) onEnd();
-      };
-      audio.src = url;
-      audio.play().catch(() => {
-        cancelAudio();
-        setIsSpeaking(false);
-        if (onEnd) onEnd();
-      });
-    }
-  }, [cancel, speakWithWebAPI, onStart, onEnd, onError]);
+    }, []);
 
-  useEffect(() => {
-    return () => { cancel(); };
-  }, [cancel]);
+    /**
+     * speak(audioUrl)
+     *
+     * Fetches the MP3 at `audioUrl` (with retries), creates a blob URL,
+     * and plays it via HTMLAudioElement.
+     *
+     * If no URL is provided the hook falls back to the RAG server's
+     * canonical /speech.mp3 endpoint with a cache-buster.
+     */
+    const speak = useCallback(async (audioUrl) => {
+        cancel();
+        cancelledRef.current = false;   // reset for this new play session
 
-  return {
-    isSpeaking,
-    error,
-    speak,
-    cancel,
-    isSupported: true
-  };
+        // Build the URL to fetch — always cache-bust so we get the latest file
+        const timestamp = Date.now();
+        let targetUrl;
+        if (audioUrl && typeof audioUrl === 'string' && audioUrl.startsWith('http')) {
+            // Strip any existing query string, then add fresh cache buster
+            const base = audioUrl.split('?')[0];
+            targetUrl = `${base}?t=${timestamp}`;
+        } else {
+            targetUrl = `${RAG_BASE_URL}/speech.mp3?t=${timestamp}`;
+        }
+
+        try {
+            // Fetch → blob (with retry on transient errors / not-ready-yet states)
+            const blobUrl = await fetchAudioBlob(targetUrl);
+
+            // If cancel() was called while we were fetching, bail out
+            if (cancelledRef.current) {
+                URL.revokeObjectURL(blobUrl);
+                return;
+            }
+
+            blobUrlRef.current = blobUrl;
+            const audio = new Audio(blobUrl);
+            audioRef.current = audio;
+
+            audio.onplay = () => {
+                setIsSpeaking(true);
+                setError('');
+                if (onStart) onStart();
+            };
+
+            audio.onended = () => {
+                setIsSpeaking(false);
+                audioRef.current = null;
+                releaseBlobUrl();
+                if (onEnd) onEnd();
+            };
+
+            audio.onerror = (e) => {
+                console.error('[useSpeechSynthesis] Playback error:', e);
+                setIsSpeaking(false);
+                audioRef.current = null;
+                releaseBlobUrl();
+                setError('Audio playback failed.');
+                if (onError) onError('Audio playback failed.');
+            };
+
+            await audio.play();
+
+        } catch (err) {
+            if (cancelledRef.current) return;   // intentional cancel, not an error
+            console.error('[useSpeechSynthesis] Could not load audio:', err.message);
+            setError('Could not load audio response.');
+            if (onError) onError('Audio playback failed.');
+        }
+    }, [cancel, onStart, onEnd, onError]);
+
+    // Clean up on unmount
+    useEffect(() => {
+        return () => {
+            cancel();
+        };
+    }, [cancel]);
+
+    return {
+        isSpeaking,
+        error,
+        speak,
+        cancel,
+        isSupported: true,
+    };
 }
