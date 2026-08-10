@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import { Activity, Bot } from 'lucide-react';
 
-export default function ChatWindow({ messages, agentState, username, onQuickQuery }) {
+export default function ChatWindow({ messages, agentState, username, onQuickQuery, onPlayAudio }) {
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function ChatWindow({ messages, agentState, username, onQuickQuer
         };
       case 'speaking':
         return {
-          text: 'Speaking... / بول رہا ہوں',
+          text: 'Speaking Urdu Audio... / اردو آواز پلے ہو رہی ہے',
           class: 'status-speaking',
           icon: '🔊',
         };
@@ -89,7 +89,7 @@ export default function ChatWindow({ messages, agentState, username, onQuickQuer
       ) : (
         <div className="messages-list">
           {messages.map((msg) => (
-            <MessageBubble key={msg._id} message={msg} />
+            <MessageBubble key={msg._id} message={msg} onPlayAudio={onPlayAudio} />
           ))}
 
           {agentState === 'processing' && (

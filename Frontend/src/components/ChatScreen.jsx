@@ -264,6 +264,10 @@ export default function ChatScreen({ user, onLogout }) {
           agentState={activeAgentState}
           username={user.username}
           onQuickQuery={handleSend}
+          onPlayAudio={async (url, doneCallback) => {
+            await standardVoice.speakManual(url);
+            if (doneCallback) doneCallback();
+          }}
         />
 
         <footer className="chat-footer-bar">
