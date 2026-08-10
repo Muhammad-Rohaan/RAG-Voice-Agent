@@ -12,9 +12,13 @@ export const chatWithAgent = async (req, res) => {
 
         let ragApiUrl = process.env.RAG_API_URL ?? "http://localhost:9000";
         if (!/^https?:\/\//i.test(ragApiUrl)) {
-            ragApiUrl = (ragApiUrl.includes('localhost') || ragApiUrl.includes('127.0.0.1'))
-                ? `http://${ragApiUrl}`
-                : `https://${ragApiUrl}`;
+            const isPublic = ragApiUrl.includes('onrender.com') || ragApiUrl.includes('.');
+            const isInternal = ragApiUrl.includes('akuh-rag-backend') || ragApiUrl.includes('rag_backend');
+            if (isPublic && !isInternal) {
+                ragApiUrl = `https://${ragApiUrl}`;
+            } else {
+                ragApiUrl = `http://${ragApiUrl}`;
+            }
         }
 
         const ragServiceResponse = await axios.post(`${ragApiUrl}/chat`, {
@@ -34,11 +38,17 @@ export const chatWithAgent = async (req, res) => {
 
         await chat.save();
 
+        const proto = req.headers['x-forwarded-proto'] || req.protocol;
+        const host = req.get('host');
+        const audioUrl = audioId 
+            ? `${proto}://${host}/speech/${audioId}.mp3` 
+            : `${proto}://${host}/speech.mp3`;
+
         res.status(201).json({
             _id: chat._id,
             message: agentResponse,
             userMessage: userQuery,
-            audioUrl: audioId ? `${ragApiUrl}/speech/${audioId}.mp3` : `${ragApiUrl}/speech.mp3`,
+            audioUrl: audioUrl,
             createdAt: chat.createdAt
         });
 
@@ -76,9 +86,13 @@ export const talkWithAgent = async (req, res) => {
 
         let ragApiUrl = process.env.RAG_API_URL ?? "http://localhost:9000";
         if (!/^https?:\/\//i.test(ragApiUrl)) {
-            ragApiUrl = (ragApiUrl.includes('localhost') || ragApiUrl.includes('127.0.0.1'))
-                ? `http://${ragApiUrl}`
-                : `https://${ragApiUrl}`;
+            const isPublic = ragApiUrl.includes('onrender.com') || ragApiUrl.includes('.');
+            const isInternal = ragApiUrl.includes('akuh-rag-backend') || ragApiUrl.includes('rag_backend');
+            if (isPublic && !isInternal) {
+                ragApiUrl = `https://${ragApiUrl}`;
+            } else {
+                ragApiUrl = `http://${ragApiUrl}`;
+            }
         }
         const ragServiceResponse = await axios.post(`${ragApiUrl}/voice/start-session`, {
             userQuery: queryToSend,

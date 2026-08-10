@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./Config/dbConfig.js";
 import authRoutes from "./Routes/auth.route.js";
 import chatRoutes from "./Routes/chat.routes.js";
+import axios from "axios";
 
 const app = express();
 
@@ -44,25 +45,57 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', service: 'api-backend' });
 })
 
-app.get('/speech.mp3', (req, res) => {
+app.get('/speech.mp3', async (req, res) => {
     let ragApiUrl = process.env.RAG_API_URL ?? "http://localhost:9000";
     if (!/^https?:\/\//i.test(ragApiUrl)) {
-        ragApiUrl = (ragApiUrl.includes('localhost') || ragApiUrl.includes('127.0.0.1'))
-            ? `http://${ragApiUrl}`
-            : `https://${ragApiUrl}`;
+        const isPublic = ragApiUrl.includes('onrender.com') || ragApiUrl.includes('.');
+        const isInternal = ragApiUrl.includes('akuh-rag-backend') || ragApiUrl.includes('rag_backend');
+        if (isPublic && !isInternal) {
+            ragApiUrl = `https://${ragApiUrl}`;
+        } else {
+            ragApiUrl = `http://${ragApiUrl}`;
+        }
     }
-    res.redirect(`${ragApiUrl}/speech.mp3`);
+    
+    try {
+        const response = await axios({
+            method: 'get',
+            url: `${ragApiUrl}/speech.mp3`,
+            responseType: 'stream'
+        });
+        res.setHeader('Content-Type', 'audio/mpeg');
+        response.data.pipe(res);
+    } catch (err) {
+        console.error("Error proxying static audio:", err.message);
+        res.status(err.response?.status || 500).json({ error: "Failed to stream static audio", details: err.message });
+    }
 });
 
 // Dynamic audio proxy — routes /speech/{audioId}.mp3 to RAG server
-app.get('/speech/:id.mp3', (req, res) => {
+app.get('/speech/:id.mp3', async (req, res) => {
     let ragApiUrl = process.env.RAG_API_URL ?? "http://localhost:9000";
     if (!/^https?:\/\//i.test(ragApiUrl)) {
-        ragApiUrl = (ragApiUrl.includes('localhost') || ragApiUrl.includes('127.0.0.1'))
-            ? `http://${ragApiUrl}`
-            : `https://${ragApiUrl}`;
+        const isPublic = ragApiUrl.includes('onrender.com') || ragApiUrl.includes('.');
+        const isInternal = ragApiUrl.includes('akuh-rag-backend') || ragApiUrl.includes('rag_backend');
+        if (isPublic && !isInternal) {
+            ragApiUrl = `https://${ragApiUrl}`;
+        } else {
+            ragApiUrl = `http://${ragApiUrl}`;
+        }
     }
-    res.redirect(`${ragApiUrl}/speech/${req.params.id}.mp3`);
+
+    try {
+        const response = await axios({
+            method: 'get',
+            url: `${ragApiUrl}/speech/${req.params.id}.mp3`,
+            responseType: 'stream'
+        });
+        res.setHeader('Content-Type', 'audio/mpeg');
+        response.data.pipe(res);
+    } catch (err) {
+        console.error("Error proxying audio:", err.message);
+        res.status(err.response?.status || 500).json({ error: "Failed to stream audio", details: err.message });
+    }
 });
 
 app.use('/auth', authRoutes);
