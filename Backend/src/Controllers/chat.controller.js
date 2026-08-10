@@ -84,19 +84,9 @@ export const talkWithAgent = async (req, res) => {
 
         const agentResponse = ragServiceResponse.data?.answer || "Voice session initialized";
 
-        const chat = new ChatModel({
-            userId: req.user?.id,
+        res.status(200).json({
             message: agentResponse,
             userMessage: userQuery
-        });
-
-        await chat.save();
-
-        res.status(201).json({
-            _id: chat._id,
-            message: agentResponse,
-            userMessage: userQuery,
-            createdAt: chat.createdAt
         });
 
     } catch (error) {
