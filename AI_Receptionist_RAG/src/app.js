@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
 import path from "path";
+import os from "os";
+import { existsSync } from "fs";
 import { WebSocketServer } from "ws";
 import { createChunks, loadDocs } from "./Controllers/RAG.controller.js";
 import { generatePkVoice, sendQueryToGroqLLM } from "./Controllers/GroqLLM.controller.js";
@@ -72,7 +74,10 @@ app.get('/health', (req, res) => {
 })
 
 app.get('/speech.mp3', (req, res) => {
-    res.sendFile(path.resolve('speech.mp3'), { headers: { 'Content-Type': 'audio/mpeg' } });
+    const tmpPath = path.join(os.tmpdir(), 'speech.mp3');
+    const localPath = path.resolve('speech.mp3');
+    const filePath = existsSync(tmpPath) ? tmpPath : localPath;
+    res.sendFile(filePath, { headers: { 'Content-Type': 'audio/mpeg' } });
 })
 
 app.post('/chat', async (req, res) => {
@@ -82,8 +87,12 @@ app.post('/chat', async (req, res) => {
             return res.status(400).json({ error: 'userQuery is required' });
         }
         const answer = await sendQueryToGroqLLM(userQuery);
-        // convert answer into PK Voice...
-        const inPkVoice = await generatePkVoice(answer); 
+
+        // Fire voice generation in the background — don't await or block the response
+        generatePkVoice(answer).catch(err =>
+            console.error("Background generatePkVoice() failed:", err.message)
+        );
+
         res.status(200).json({ answer });
     } catch (error) {
         console.error("Error in /chat endpoint:", error);

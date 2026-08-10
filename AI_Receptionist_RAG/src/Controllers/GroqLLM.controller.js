@@ -1,5 +1,7 @@
 import Groq from "groq-sdk";
 import { writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { translate } from "free-translate";
 import { queryChroma } from '../Pipes/QueryPipeline.js';
 import dotenv from 'dotenv';
@@ -23,14 +25,19 @@ export const generatePkVoice = async (textMsgToConvert) => {
             }),
         });
 
+        if (!res.ok) {
+            throw new Error(`UpliftAI API error: ${res.status} ${res.statusText}`);
+        }
+
         const audioBuffer = Buffer.from(await res.arrayBuffer());
-        await writeFile("speech.mp3", audioBuffer);
-        await writeFile(`speech${new Date().getTime()}.mp3`, audioBuffer);
+
+        // Use /tmp (writable on Render) instead of CWD (read-only in production)
+        const tmpDir = os.tmpdir();
+        await writeFile(path.join(tmpDir, "speech.mp3"), audioBuffer);
+        await writeFile(path.join(tmpDir, `speech${new Date().getTime()}.mp3`), audioBuffer);
 
     } catch (error) {
-        console.log("Error in generatePkVoice()");
-        console.log(error);
-
+        console.log("Error in generatePkVoice():", error.message);
     }
 }
 
