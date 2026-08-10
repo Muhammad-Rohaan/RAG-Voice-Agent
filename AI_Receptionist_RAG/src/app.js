@@ -86,12 +86,16 @@ app.post('/chat', async (req, res) => {
         if (!userQuery) {
             return res.status(400).json({ error: 'userQuery is required' });
         }
+
         const answer = await sendQueryToGroqLLM(userQuery);
 
-        // Await voice generation — MP3 must be ready before we respond so the
-        // client can immediately fetch and play it. The underlying crash bugs
-        // (read-only CWD, missing !res.ok check) have been fixed.
-        await generatePkVoice(answer);
+        // Fire-and-forget: voice generation runs in background so the text
+        // response is returned immediately without hitting Render's request
+        // timeout. Translation + TTS can take 5-15 s; the frontend polls with
+        // retries (see useSpeechSynthesis.js) and plays once ready.
+        generatePkVoice(answer).catch(err =>
+            console.error('Background generatePkVoice() failed:', err.message)
+        );
 
         res.status(200).json({ answer });
     } catch (error) {
