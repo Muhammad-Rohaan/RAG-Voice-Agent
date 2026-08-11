@@ -4,12 +4,13 @@ import useRealtimeVoiceAgent from '../hooks/useRealtimeVoiceAgent';
 import ChatWindow from './ChatWindow';
 import VoiceButton from './VoiceButton';
 import RealtimeVoiceVisualizer from './VoiceAgent/RealtimeVoiceVisualizer';
-import { Send, LogOut, Activity, AlertTriangle, Radio, Sparkles, HelpCircle } from 'lucide-react';
+import { Send, LogOut, Activity, AlertTriangle, Radio, Sparkles, HelpCircle, Menu, X } from 'lucide-react';
 
 export default function ChatScreen({ user, onLogout }) {
   const [input, setInput] = useState('');
   const [useRealtimeMode, setUseRealtimeMode] = useState(true);
   const [showMobileHelp, setShowMobileHelp] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const ragWsUrl = import.meta.env.VITE_RAG_WS_URL ?? 'wss://akuh-voice-agent.onrender.com';
 
@@ -78,7 +79,15 @@ export default function ChatScreen({ user, onLogout }) {
 
   return (
     <div className="chat-container">
-      <aside className="chat-sidebar">
+      {isSidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`chat-sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <Activity className="sidebar-logo-icon" size={26} />
@@ -87,6 +96,14 @@ export default function ChatScreen({ user, onLogout }) {
               <span className="logo-urdu">آغا خان ہسپتال استقبالیہ</span>
             </div>
           </div>
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close Sidebar"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <div className="sidebar-section">
@@ -184,6 +201,15 @@ export default function ChatScreen({ user, onLogout }) {
 
       <main className="chat-main">
         <header className="chat-header">
+          <button
+            type="button"
+            className="mobile-sidebar-toggle"
+            onClick={() => setIsSidebarOpen((prev) => !prev)}
+            aria-label="Toggle Menu"
+          >
+            {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+
           <div className="header-agent-info">
             <div className="agent-avatar-wrapper">
               <Activity className="agent-avatar-icon" size={24} />
