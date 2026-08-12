@@ -57,6 +57,26 @@ YOU CAN ALSO TALK IN URDU IF THE USER TALKS IN URDU.
 `;
 
 export function registerRealtimeWSS(wss) {
+
+    const tools = [
+        {
+            type: "function",
+            name: "queryKnowledge",
+            description:
+                "Search the hospital knowledge base using ChromaDB. Use this for hospital-specific questions.",
+            parameters: {
+                type: "object",
+                properties: {
+                    question: {
+                        type: "string",
+                        description: "The user's hospital-related question"
+                    }
+                },
+                required: ["question"]
+            }
+        }
+    ];
+
     wss.on("connection", (clientWs) => {
         console.log("Browser connected to backend WS");
 
@@ -118,9 +138,8 @@ export function registerRealtimeWSS(wss) {
         });
 
 
-
         // 3. Listen to OpenAI events and relay to browser
-        openaiWs.on("message", (message) => {
+        openaiWs.on("message", async (message) => {
             const event = JSON.parse(message.toString());
 
             if (event.type === "session.created" || event.type === "session.updated") {
@@ -133,7 +152,6 @@ export function registerRealtimeWSS(wss) {
 
             if (event.type === "input_audio_buffer.speech_started") {
                 sendToClient({ type: "speech_started" }); // Barge-in signal
-
             }
 
             if (event.type === "conversation.item.input_audio_transcription.completed") {
@@ -157,6 +175,12 @@ export function registerRealtimeWSS(wss) {
             if (event.type === "error") {
                 console.error("OpenAI Error:", JSON.stringify(event.error, null, 2));
                 sendToClient({ type: "error", message: event.error?.message });
+            }
+
+            if (event.type === "response.function_call_arguments.done") {
+                const args = JSON.parse(event.arguments);
+                const results = await queryChroma(args.question);
+
             }
         });
 
@@ -188,7 +212,3 @@ export function registerRealtimeWSS(wss) {
     console.log("Realtime WSS handler registered");
 }
 
-// Working
-async function getContext(userQuery) {
-    return await queryChroma(userQuery);
-}
