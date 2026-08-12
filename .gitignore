@@ -4,6 +4,9 @@
 node_modules/
 **/node_modules/
 
+STS_LLM/
+
+
 # -------------------------------------------------------------
 # Environment Variables & Secrets (Crucial for Security)
 # -------------------------------------------------------------

@@ -1,4 +1,4 @@
-/** 
+/** #################
 
 // Realtime service: handles WebRTC connection, microphone, and event routing.
 // Uses OpenAI's recommended WebRTC flow:
@@ -200,7 +200,7 @@ export class RealtimeService {
       this.onStatusChange("connecting");
 
       // 1. Connect to Backend WS (Matches server port)
-      this.ws = new WebSocket("ws://localhost:8000");
+      this.ws = new WebSocket("ws://localhost:9000");
 
       this.ws.onopen = async () => {
         // 2. Setup Microphone
@@ -363,3 +363,4 @@ export class RealtimeService {
     this.onStatusChange("disconnected");
   }
 }
+

@@ -10,6 +10,7 @@ import { createChunks, loadDocs } from "./Controllers/RAG.controller.js";
 import { generatePkVoice, sendQueryToGroqLLM } from "./Controllers/GroqLLM.controller.js";
 // Dynamic import of startVoiceAgentSession will be done in the route handler
 import { embedding } from "./Pipes/IngestionPipeline.js";
+import { registerRealtimeWSS } from "./Controllers/RealTimeVoiceAgent.controller.js";
 
 
 dotenv.config();
@@ -41,7 +42,10 @@ app.use(express.json());
 
 // for Voice Session:
 const server = http.createServer(app);
-export const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server });
+
+// Wire up the OpenAI Realtime WS proxy at startup
+registerRealtimeWSS(wss);
 
 app.get('/', (req, res) => {
     res.send('Welcome to AKUH RAG Service');
@@ -73,7 +77,34 @@ app.get('/speech.mp3', (req, res) => {
 
 app.use(express.static(path.resolve('.')));
 
-/*
+
+// app.post('/chat', async (req, res) => {
+//     try {
+//         const { userQuery } = req.body;
+//         if (!userQuery) {
+//             return res.status(400).json({ error: 'userQuery is required' });
+//         }
+
+//         const answer = await sendQueryToGroqLLM(userQuery);
+
+//         // Fire-and-forget: voice generation runs in background so the text
+//         // response is returned immediately without hitting Render's request
+//         // timeout. Translation + TTS can take 5-15 s; the frontend polls with
+//         // retries (see useSpeechSynthesis.js) and plays once ready.
+//         generatePkVoice(answer).catch(err =>
+//             console.error('Background generatePkVoice() failed:', err.message)
+//         );
+
+//         res.status(200).json({ answer });
+//     } catch (error) {
+//         console.error("Error in /chat endpoint:", error);
+//         res.status(500).json({ error: 'Internal Server Error', details: error.message });
+//     }
+// });
+
+
+
+
 app.post('/chat', async (req, res) => {
     try {
         const { userQuery } = req.body;
@@ -82,40 +113,8 @@ app.post('/chat', async (req, res) => {
         }
 
         const answer = await sendQueryToGroqLLM(userQuery);
-
-        // Fire-and-forget: voice generation runs in background so the text
-        // response is returned immediately without hitting Render's request
-        // timeout. Translation + TTS can take 5-15 s; the frontend polls with
-        // retries (see useSpeechSynthesis.js) and plays once ready.
-        generatePkVoice(answer).catch(err =>
-            console.error('Background generatePkVoice() failed:', err.message)
-        );
-
-        res.status(200).json({ answer });
-    } catch (error) {
-        console.error("Error in /chat endpoint:", error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
-    }
-});
-*/
-
-
-app.post('/chat', async (req, res) => {
-    try {
-        const { userQuery } = req.body;
-        if (!userQuery) {
-            return res.status(400).json({ error: 'userQuery is required' });
-        }
-
-        // Get text response from your LLM/RAG pipeline
-        const answer = await sendQueryToGroqLLM(userQuery);
-
-        // Generate a unique identifier for this turn's audio
         const audioId = Date.now().toString();
 
-        // Await TTS so the audio file is ready before the frontend receives the response.
-        // This adds a few seconds to the "Thinking..." phase but eliminates all 404 polling
-        // and lets the audio play instantly when the text appears on the client.
         try {
             await generatePkVoice(answer, audioId);
         } catch (ttsErr) {
@@ -142,26 +141,22 @@ app.get('/speech/:id.mp3', (req, res) => {
         res.setHeader('Content-Type', 'audio/mpeg');
         return res.sendFile(tmpPath);
     } else {
-        // Return 404 while generation is in progress so the frontend can retry
         return res.status(404).json({ error: 'Audio file still generating', status: 'pending' });
     }
 });
 
 
-// Voice session endpoint with dynamic import to avoid circular dependency
+// Voice session endpoint — WS is already wired at startup via registerRealtimeWSS()
+// This endpoint exists so the frontend can optionally signal before connecting
 app.post('/voice/start-session', async (req, res) => {
-    try {
-        const { startVoiceAgentSession } = await import('./Controllers/RealTimeVoiceAgent.controller.js');
-        const { userQuery } = req.body;
-        const answer = await startVoiceAgentSession(userQuery);
-        res.status(200).json({ answer: answer || "Voice session initialized" });
-    } catch (error) {
-        console.error("Error in /voice/start-session endpoint:", error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
-    }
+    res.status(200).json({ status: 'ok', message: 'Connect to WS to start voice session' });
 });
 
 // Start server
+
 server.listen(port, () => {
     console.log(`AKUH RAG Server Running on: http://localhost:${port}`);
 });
+
+
+

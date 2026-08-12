@@ -66,7 +66,7 @@ function base64ToFloat32PCM(base64) {
   return float32;
 }
 
-export default function useRealtimeVoiceAgent(wsUrl = 'wss://akuh-voice-agent.onrender.com') {
+export default function useRealtimeVoiceAgent(wsUrl = 'ws://localhost:9000') {
   const [isConnected, setIsConnected] = useState(false);
   const [agentState, setAgentState] = useState('idle'); // idle, connecting, ready, listening, speaking, error
   const [messages, setMessages] = useState([]);
