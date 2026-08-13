@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 const RAG_BASE_URL = import.meta.env.VITE_RAG_API_BASE_URL ?? 'http://localhost:9000';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
+const RAG_WS_URL = import.meta.env.VITE_RAG_WS_URL ?? 'ws://localhost:9000';
 
 /**
  * Production-grade helper to fetch and play a specific Pakistani Urdu speech MP3 audio

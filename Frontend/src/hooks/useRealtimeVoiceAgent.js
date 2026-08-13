@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../utils/api';
 
+const RAG_WS_URL = import.meta.env.VITE_RAG_WS_URL ?? 'ws://localhost:9000';
+
 /**
  * Helper to resample Float32 audio data from hardware rate (e.g. 48kHz/44.1kHz) to 24kHz
  */
@@ -66,7 +68,7 @@ function base64ToFloat32PCM(base64) {
   return float32;
 }
 
-export default function useRealtimeVoiceAgent(wsUrl = 'ws://localhost:9000') {
+export default function useRealtimeVoiceAgent(wsUrl = RAG_WS_URL) {
   const [isConnected, setIsConnected] = useState(false);
   const [agentState, setAgentState] = useState('idle'); // idle, connecting, ready, listening, speaking, error
   const [messages, setMessages] = useState([]);

@@ -175,6 +175,7 @@ export class RealtimeService {
 
 **/
 
+const RAG_WS_URL = import.meta.env.VITE_RAG_WS_URL ?? 'ws://localhost:9000';
 
 export class RealtimeService {
   constructor({ onMessage, onStatusChange, onError }) {
@@ -200,7 +201,7 @@ export class RealtimeService {
       this.onStatusChange("connecting");
 
       // 1. Connect to Backend WS (Matches server port)
-      this.ws = new WebSocket("ws://localhost:9000");
+      this.ws = new WebSocket(RAG_WS_URL);
 
       this.ws.onopen = async () => {
         // 2. Setup Microphone
