@@ -13,19 +13,19 @@ export default function ChatWindow({ messages, agentState, username, onQuickQuer
     switch (agentState) {
       case 'listening':
         return {
-          text: 'Listening... / سن رہا ہوں',
+          text: 'Listening...',
           class: 'status-listening',
           icon: '🎤',
         };
       case 'processing':
         return {
-          text: 'Thinking... / سوچ رہا ہوں',
+          text: 'Thinking...',
           class: 'status-processing',
           icon: '🤔',
         };
       case 'speaking':
         return {
-          text: 'Speaking Urdu Audio... / اردو آواز پلے ہو رہی ہے',
+          text: 'Speaking...',
           class: 'status-speaking',
           icon: '🔊',
         };
@@ -44,14 +44,10 @@ export default function ChatWindow({ messages, agentState, username, onQuickQuer
           <div className="welcome-logo-wrapper">
             <Activity size={44} />
           </div>
-          <h2>Hello, {username}! / السلام علیکم</h2>
-          <span className="welcome-urdu">آپ کیسے ہیں؟</span>
+          <h2>Welcome, {username}!</h2>
           <p>
             Press the mic button and ask about clinics, doctors, timings, or appointments.
           </p>
-          <span className="welcome-urdu-desc">
-            مائیک بٹن دبائیں اور کلینک، ڈاکٹر، اوقات یا اپائنٹمنٹ کے بارے میں پوچھیں۔
-          </span>
 
           <div className="welcome-cards">
             <button
@@ -61,7 +57,6 @@ export default function ChatWindow({ messages, agentState, username, onQuickQuer
             >
               <span className="w-card-emoji">🏥</span>
               <h4>Clinic Timings</h4>
-              <span className="w-card-ur">کلینک کے اوقات</span>
               <p>&quot;Cardiology department kahan hai?&quot;</p>
             </button>
             <button
@@ -71,7 +66,6 @@ export default function ChatWindow({ messages, agentState, username, onQuickQuer
             >
               <span className="w-card-emoji">🦷</span>
               <h4>Services & Fees</h4>
-              <span className="w-card-ur">سروسز اور فیس</span>
               <p>&quot;Dental checkup ki fees kitni hai?&quot;</p>
             </button>
             <button
@@ -81,7 +75,6 @@ export default function ChatWindow({ messages, agentState, username, onQuickQuer
             >
               <span className="w-card-emoji">📅</span>
               <h4>Book Appointment</h4>
-              <span className="w-card-ur">اپائنٹمنٹ بک کریں</span>
               <p>&quot;Dr. Ali se appointment chahiye&quot;</p>
             </button>
           </div>

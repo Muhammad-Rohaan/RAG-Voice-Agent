@@ -1,124 +1,98 @@
-import React from 'react';
-import { PhoneCall, PhoneOff, Mic, Volume2, Activity } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Mic, Volume2, Activity } from 'lucide-react';
 
 export default function RealtimeVoiceVisualizer({
   agentState,
   volumeLevel,
-  latestAiMessage,
-  latestUserMessage,
 }) {
-  const getStatusText = () => {
+  const [callSeconds, setCallSeconds] = useState(0);
+
+  const isLive =
+    agentState === 'listening' || agentState === 'speaking' || agentState === 'ready';
+
+  // Call duration timer
+  useEffect(() => {
+    if (!isLive) {
+      setCallSeconds(0);
+      return;
+    }
+    const interval = setInterval(() => setCallSeconds((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [isLive]);
+
+  const formatTime = (secs) => {
+    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+    const s = String(secs % 60).padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const getStatusLabel = () => {
     switch (agentState) {
-      case 'connecting':
-        return { en: 'Connecting...', ur: 'رابطہ ہو رہا ہے...' };
+      case 'connecting': return 'Connecting...';
       case 'ready':
-      case 'listening':
-        return { en: 'Live — I am listening', ur: 'براہ راست — سن رہا ہوں' };
-      case 'speaking':
-        return { en: 'Live — I am speaking', ur: 'براہ راست — بول رہا ہوں' };
-      case 'error':
-        return { en: 'Call ended', ur: 'کال ختم ہو گئی' };
-      case 'idle':
-      default:
-        return { en: 'Tap mic to start talking', ur: 'مائیک دبائیں اور بولیں' };
+      case 'listening': return 'Listening...';
+      case 'speaking': return 'Speaking...';
+      case 'error': return 'Call ended';
+      default: return 'Tap mic to start';
     }
   };
 
-  const status = getStatusText();
-  const isLive =
-    agentState === 'listening' || agentState === 'speaking' || agentState === 'ready';
   const level = Math.max(0.12, volumeLevel || 0.12);
 
   return (
-    <div className={`realtime-visualizer-container state-${agentState}`}>
-      <div className="visualizer-header">
-        <div className="visualizer-status-left">
-          <div className={`status-dot ${isLive ? 'live' : ''}`} />
-          {isLive ? (
-            <PhoneCall size={18} className="call-icon active-call" aria-hidden="true" />
-          ) : (
-            <PhoneOff size={18} className="call-icon offline-call" aria-hidden="true" />
-          )}
-          <div className="status-label-group">
-            <span className="status-label">{status.en}</span>
-            <span className="status-label-ur">{status.ur}</span>
-          </div>
+    <div className={`call-screen state-${agentState}`}>
+      {/* Background animated rings */}
+      {isLive && (
+        <div className="call-rings" aria-hidden="true">
+          <div className="call-ring ring-1" style={{ transform: `scale(${1 + level * 0.6})` }} />
+          <div className="call-ring ring-2" style={{ transform: `scale(${1 + level * 0.4})` }} />
+          <div className="call-ring ring-3" />
         </div>
+      )}
 
+      {/* Hospital avatar */}
+      <div className="call-avatar-wrapper" aria-hidden="true">
+        <div className={`call-avatar-orb ${agentState}`}>
+          {agentState === 'speaking' ? (
+            <Volume2 size={40} className="call-orb-icon" />
+          ) : agentState === 'listening' ? (
+            <Mic size={40} className="call-orb-icon" />
+          ) : (
+            <Activity size={40} className="call-orb-icon" />
+          )}
+        </div>
+      </div>
+
+      {/* Caller name */}
+      <div className="call-caller-info">
+        <h2 className="call-name">AKUH Reception</h2>
+        <p className="call-subtitle">Aga Khan University Hospital</p>
+      </div>
+
+      {/* Status & Timer */}
+      <div className="call-status-row">
+        <span className={`call-status-badge ${isLive ? 'live' : ''}`}>
+          {isLive ? (
+            <><span className="live-dot" />{getStatusLabel()}</>
+          ) : (
+            <>{agentState === 'connecting' ? 'Connecting...' : 'Tap mic to call'}</>
+          )}
+        </span>
         {isLive && (
-          <div className="visualizer-wave-bars" aria-hidden="true">
-            <div
-              className="wave-bar"
-              style={{ transform: `scaleY(${Math.max(0.25, level * 2.2)})` }}
-            />
-            <div
-              className="wave-bar"
-              style={{ transform: `scaleY(${Math.max(0.4, level * 3.2)})` }}
-            />
-            <div
-              className="wave-bar"
-              style={{ transform: `scaleY(${Math.max(0.7, level * 4.5)})` }}
-            />
-            <div
-              className="wave-bar"
-              style={{ transform: `scaleY(${Math.max(0.4, level * 3.0)})` }}
-            />
-            <div
-              className="wave-bar"
-              style={{ transform: `scaleY(${Math.max(0.25, level * 1.8)})` }}
-            />
-          </div>
+          <span className="call-timer">{formatTime(callSeconds)}</span>
         )}
       </div>
 
+      {/* Wave bars */}
       {isLive && (
-        <div className="realtime-live-stage">
-          <div className="orb-container" aria-hidden="true">
+        <div className="call-wave-bars" aria-hidden="true">
+          {[2.2, 3.2, 4.5, 3.8, 3.0, 2.5, 1.8].map((mult, i) => (
             <div
-              className={`orb-aura ${agentState}`}
-              style={{
-                transform: `scale(${
-                  agentState === 'speaking'
-                    ? 1.15 + level * 0.35
-                    : agentState === 'listening'
-                      ? 1.0 + level * 0.4
-                      : 1
-                })`,
-                opacity: agentState === 'speaking' ? 0.9 : 0.4,
-              }}
+              key={i}
+              className="call-wave-bar"
+              style={{ transform: `scaleY(${Math.max(0.2, level * mult)})` }}
             />
-            <div className={`orb-core ${agentState}`}>
-              {agentState === 'speaking' ? (
-                <Volume2 size={28} className="orb-icon speaking-pulse" />
-              ) : agentState === 'listening' ? (
-                <Mic size={28} className="orb-icon listening-pulse" />
-              ) : (
-                <Activity size={28} className="orb-icon ready-pulse" />
-              )}
-            </div>
-          </div>
-
-          <div className="live-caption-card">
-            <div className="caption-speaker">
-              {agentState === 'speaking' ? (
-                <>
-                  <Volume2 size={16} className="caption-mic" aria-hidden="true" />
-                  <span>Hospital Reply / ہسپتال کا جواب</span>
-                </>
-              ) : (
-                <>
-                  <Mic size={16} className="caption-mic" aria-hidden="true" />
-                  <span>Your Question / آپ کا سوال</span>
-                </>
-              )}
-            </div>
-            <p className="caption-body">
-              {agentState === 'speaking'
-                ? latestAiMessage?.message || 'Speaking now... / اب بول رہا ہوں...'
-                : latestUserMessage?.message ||
-                  'Speak now... / اب بولیں...'}
-            </p>
-          </div>
+          ))}
         </div>
       )}
     </div>

@@ -65,7 +65,6 @@ export default function AuthScreen({ onAuthSuccess }) {
 
             <div className="banner-tagline">
               <h2>Welcome to Aga Khan University Hospital</h2>
-              <span className="urdu-tagline">آغا خان یونیورسٹی ہسپتال میں خوش آمدید</span>
               <p>
                 Ask about doctors, clinic timings, and appointments — by voice or chat.
               </p>
@@ -76,21 +75,18 @@ export default function AuthScreen({ onAuthSuccess }) {
                 <span className="bullet">✦</span>
                 <div>
                   <span>Find doctors & clinic timings</span>
-                  <span className="feature-ur">ڈاکٹر اور اوقات تلاش کریں</span>
                 </div>
               </div>
               <div className="feature-item">
                 <span className="bullet">✦</span>
                 <div>
                   <span>Book appointments easily</span>
-                  <span className="feature-ur">آسانی سے اپائنٹمنٹ بک کریں</span>
                 </div>
               </div>
               <div className="feature-item">
                 <span className="bullet">✦</span>
                 <div>
                   <span>Available 24 hours a day</span>
-                  <span className="feature-ur">چوبیس گھنٹے دستیاب</span>
                 </div>
               </div>
             </div>
@@ -100,9 +96,6 @@ export default function AuthScreen({ onAuthSuccess }) {
         <div className="auth-form-side">
           <div className="form-header">
             <h3>{isLogin ? 'Sign In' : 'Create Account'}</h3>
-            <span className="urdu-subtitle">
-              {isLogin ? 'داخل ہوں' : 'اکاؤنٹ بنائیں'}
-            </span>
             <p className="form-subtitle">
               {isLogin
                 ? 'Enter your details to start talking with the help desk'
@@ -121,14 +114,14 @@ export default function AuthScreen({ onAuthSuccess }) {
             {!isLogin && (
               <div className="input-group">
                 <label htmlFor="username">
-                  Name / نام
+                  Name
                 </label>
                 <div className="input-wrapper">
                   <User className="input-icon" size={18} />
                   <input
                     type="text"
                     id="username"
-                    placeholder="Your name / اپنا نام"
+                    placeholder="Your name"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required={!isLogin}
@@ -138,7 +131,7 @@ export default function AuthScreen({ onAuthSuccess }) {
             )}
 
             <div className="input-group">
-              <label htmlFor="email">Email / ای میل</label>
+              <label htmlFor="email">Email</label>
               <div className="input-wrapper">
                 <Mail className="input-icon" size={18} />
                 <input
@@ -153,7 +146,7 @@ export default function AuthScreen({ onAuthSuccess }) {
             </div>
 
             <div className="input-group">
-              <label htmlFor="password">Password / پاس ورڈ</label>
+              <label htmlFor="password">Password</label>
               <div className="input-wrapper">
                 <Lock className="input-icon" size={18} />
                 <input
@@ -181,19 +174,19 @@ export default function AuthScreen({ onAuthSuccess }) {
               ) : isLogin ? (
                 <>
                   <LogIn size={18} />
-                  <span>Sign In / داخل ہوں</span>
+                  <span>Sign In</span>
                 </>
               ) : (
                 <>
                   <UserPlus size={18} />
-                  <span>Register / رجسٹر</span>
+                  <span>Register</span>
                 </>
               )}
             </button>
           </form>
 
           <div className="auth-divider">
-            <span>OR / یا</span>
+            <span>OR</span>
           </div>
 
           <div className="google-login-wrapper">
@@ -219,7 +212,7 @@ export default function AuthScreen({ onAuthSuccess }) {
                     setError('');
                   }}
                 >
-                  Sign Up / رجسٹر
+                  Sign Up
                 </button>
               </p>
             ) : (
@@ -232,7 +225,7 @@ export default function AuthScreen({ onAuthSuccess }) {
                     setError('');
                   }}
                 >
-                  Sign In / داخل ہوں
+                  Sign In
                 </button>
               </p>
             )}

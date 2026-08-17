@@ -63,18 +63,9 @@ export default function ChatScreen({ user, onLogout }) {
   };
 
   const helpSteps = [
-    {
-      en: 'Press the mic button and speak your question.',
-      ur: 'مائیک بٹن دبائیں اور اپنا سوال بولیں۔',
-    },
-    {
-      en: 'You can ask in English or Urdu.',
-      ur: 'آپ انگریزی یا اردو میں پوچھ سکتے ہیں۔',
-    },
-    {
-      en: 'Or type your question in the box below.',
-      ur: 'یا نیچے خانے میں لکھ کر بھیجیں۔',
-    },
+    { en: 'Press the mic button and speak your question.' },
+    { en: 'You can ask in English or Urdu.' },
+    { en: 'Or type your question in the box below.' },
   ];
 
   return (
@@ -93,7 +84,6 @@ export default function ChatScreen({ user, onLogout }) {
             <Activity className="sidebar-logo-icon" size={26} />
             <div>
               <span>AKUH Reception</span>
-              <span className="logo-urdu">آغا خان ہسپتال استقبالیہ</span>
             </div>
           </div>
           <button
@@ -109,7 +99,6 @@ export default function ChatScreen({ user, onLogout }) {
         <div className="sidebar-section">
           <div className="sidebar-section-title">
             <span className="en">Voice Mode</span>
-            <span className="ur">آواز کا موڈ</span>
           </div>
           <button
             type="button"
@@ -119,15 +108,10 @@ export default function ChatScreen({ user, onLogout }) {
           >
             <div className="toggle-card-info">
               <span className="toggle-card-label">
-                {useRealtimeMode ? '📞 Talk Live' : '💬 Type & Talk'}
-              </span>
-              <span className="toggle-card-label-ur">
-                {useRealtimeMode ? 'براہ راست بات کریں' : 'لکھیں یا بولیں'}
+                {useRealtimeMode ? '📞 Live Voice Call' : '💬 Type & Talk'}
               </span>
               <span className="toggle-card-desc">
-                {useRealtimeMode ? 'Tap to switch mode' : 'Tap to switch mode'}
-                {' · '}
-                {useRealtimeMode ? 'موڈ بدلنے کے لیے دبائیں' : 'موڈ بدلنے کے لیے دبائیں'}
+                {useRealtimeMode ? 'Real-time voice conversation' : 'Chat with voice support'}
               </span>
             </div>
             <div className={`toggle-pill ${useRealtimeMode ? 'on' : ''}`} aria-hidden="true" />
@@ -138,7 +122,6 @@ export default function ChatScreen({ user, onLogout }) {
           <div className="sidebar-section">
             <div className="sidebar-section-title">
               <span className="en">Auto Listen</span>
-              <span className="ur">خودکار سننا</span>
             </div>
             <button
               type="button"
@@ -148,10 +131,7 @@ export default function ChatScreen({ user, onLogout }) {
             >
               <div className="toggle-card-info">
                 <span className="toggle-card-label">🎙️ Keep Mic Open</span>
-                <span className="toggle-card-label-ur">مائیک خود بخود کھلتا رہے</span>
-                <span className="toggle-card-desc">
-                  No need to tap again · دوبارہ دبانے کی ضرورت نہیں
-                </span>
+                <span className="toggle-card-desc">No need to tap again</span>
               </div>
               <div
                 className={`toggle-pill ${standardVoice.autoContinue ? 'on' : ''}`}
@@ -164,7 +144,6 @@ export default function ChatScreen({ user, onLogout }) {
         <div className="sidebar-section">
           <div className="sidebar-section-title">
             <span className="en">How to Use</span>
-            <span className="ur">استعمال کا طریقہ</span>
           </div>
           <div className="sidebar-tips">
             {helpSteps.map((step, index) => (
@@ -172,7 +151,6 @@ export default function ChatScreen({ user, onLogout }) {
                 <span className="tip-num">{index + 1}</span>
                 <div className="tip-item-text">
                   <span className="en">{step.en}</span>
-                  <span className="ur">{step.ur}</span>
                 </div>
               </div>
             ))}
@@ -189,12 +167,9 @@ export default function ChatScreen({ user, onLogout }) {
               <span className="user-email">{user.email}</span>
             </div>
           </div>
-          <button onClick={onLogout} className="logout-btn" title="Exit / باہر نکلیں">
+          <button onClick={onLogout} className="logout-btn" title="Logout">
             <LogOut size={16} />
-            <span className="logout-label">
-              Exit
-              <span className="logout-ur"> / باہر</span>
-            </span>
+            <span className="logout-label">Exit</span>
           </button>
         </div>
       </aside>
@@ -218,7 +193,6 @@ export default function ChatScreen({ user, onLogout }) {
             <div className="agent-details">
               <h2>Hospital Help Desk</h2>
               <p>Aga Khan University Hospital</p>
-              <span className="agent-urdu">آغا خان یونیورسٹی ہسپتال — مدد کا ڈیسک</span>
             </div>
           </div>
 
@@ -228,7 +202,7 @@ export default function ChatScreen({ user, onLogout }) {
               className="mobile-help-btn"
               onClick={() => setShowMobileHelp((prev) => !prev)}
               aria-expanded={showMobileHelp}
-              aria-label="Show help / مدد دکھائیں"
+              aria-label="Show help"
             >
               <HelpCircle size={20} />
               <span>Help</span>
@@ -241,23 +215,19 @@ export default function ChatScreen({ user, onLogout }) {
                 <Sparkles size={14} className="badge-icon" />
               )}
               <span>{useRealtimeMode ? 'Live Voice' : 'Type & Talk'}</span>
-              <span className="badge-ur">
-                {useRealtimeMode ? ' / براہ راست' : ' / لکھیں'}
-              </span>
             </div>
           </div>
         </header>
 
         {showMobileHelp && (
           <div className="mobile-help-panel">
-            <p className="mobile-help-title">How to Use / استعمال کا طریقہ</p>
+            <p className="mobile-help-title">How to Use</p>
             <div className="sidebar-tips">
               {helpSteps.map((step, index) => (
                 <div className="tip-item" key={index}>
                   <span className="tip-num">{index + 1}</span>
                   <div className="tip-item-text">
                     <span className="en">{step.en}</span>
-                    <span className="ur">{step.ur}</span>
                   </div>
                 </div>
               ))}
@@ -269,12 +239,6 @@ export default function ChatScreen({ user, onLogout }) {
           <RealtimeVoiceVisualizer
             agentState={realtimeVoice.agentState}
             volumeLevel={realtimeVoice.volumeLevel}
-            latestAiMessage={[...realtimeVoice.messages]
-              .reverse()
-              .find((m) => m.role === 'agent')}
-            latestUserMessage={[...realtimeVoice.messages]
-              .reverse()
-              .find((m) => m.role === 'user')}
           />
         )}
 
@@ -285,53 +249,65 @@ export default function ChatScreen({ user, onLogout }) {
           </div>
         )}
 
-        <ChatWindow
-          messages={activeMessages}
-          agentState={activeAgentState}
-          username={user.username}
-          onQuickQuery={handleSend}
-          onPlayAudio={async (url, doneCallback) => {
-            await standardVoice.speakManual(url);
-            if (doneCallback) doneCallback();
-          }}
-        />
+        {!useRealtimeMode && (
+          <ChatWindow
+            messages={activeMessages}
+            agentState={activeAgentState}
+            username={user.username}
+            onQuickQuery={handleSend}
+            onPlayAudio={async (url, doneCallback) => {
+              await standardVoice.speakManual(url);
+              if (doneCallback) doneCallback();
+            }}
+          />
+        )}
 
         <footer className="chat-footer-bar">
           <div className="input-container">
             <VoiceButton state={activeAgentState} onClick={handleVoiceButtonClick} />
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder={
-                activeAgentState === 'listening'
-                  ? 'Listening... speak now | سن رہا ہوں، بولیں...'
-                  : 'Type your question | اپنا سوال لکھیں...'
-              }
-              disabled={activeAgentState === 'processing' || activeAgentState === 'disabled'}
-              rows={1}
-              aria-label="Type your question / اپنا سوال لکھیں"
-            />
-            <button
-              onClick={() => handleSend()}
-              className="send-btn"
-              disabled={
-                activeAgentState === 'processing' ||
-                activeAgentState === 'disabled' ||
-                !input.trim()
-              }
-              title="Send / بھیجیں"
-              aria-label="Send message / پیغام بھیجیں"
-            >
-              <Send size={20} />
-            </button>
+            {!useRealtimeMode && (
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder={
+                  activeAgentState === 'listening'
+                    ? 'Listening... speak now'
+                    : 'Type your question...'
+                }
+                disabled={activeAgentState === 'processing' || activeAgentState === 'disabled'}
+                rows={1}
+                aria-label="Type your question"
+              />
+            )}
+            {useRealtimeMode && (
+              <div className="realtime-footer-hint">
+                {activeAgentState === 'listening' ? '🎤 Listening...' :
+                 activeAgentState === 'speaking' ? '🔊 Speaking...' :
+                 activeAgentState === 'connecting' ? '⏳ Connecting...' :
+                 activeAgentState === 'ready' ? '✅ Connected — speak anytime' :
+                 'Tap mic to start your voice call'}
+              </div>
+            )}
+            {!useRealtimeMode && (
+              <button
+                onClick={() => handleSend()}
+                className="send-btn"
+                disabled={
+                  activeAgentState === 'processing' ||
+                  activeAgentState === 'disabled' ||
+                  !input.trim()
+                }
+                title="Send"
+                aria-label="Send message"
+              >
+                <Send size={20} />
+              </button>
+            )}
           </div>
           <p className="disclaimer-text">
             <span className="disclaimer-en">
               For emergencies, go to the Emergency Room immediately.
-            </span>
-            <span className="disclaimer-ur">
-              ایمرجنسی میں فوراً ایمرجنسی روم جائیں۔
             </span>
           </p>
         </footer>
