@@ -58,25 +58,6 @@ YOU CAN ALSO TALK IN URDU IF THE USER TALKS IN URDU.
 
 export function registerRealtimeWSS(wss) {
 
-    const tools = [
-        {
-            type: "function",
-            name: "queryKnowledge",
-            description:
-                "Search the hospital knowledge base using ChromaDB. Use this for hospital-specific questions.",
-            parameters: {
-                type: "object",
-                properties: {
-                    question: {
-                        type: "string",
-                        description: "The user's hospital-related question"
-                    }
-                },
-                required: ["question"]
-            }
-        }
-    ];
-
     wss.on("connection", (clientWs) => {
         console.log("Browser connected to backend WS");
 
@@ -132,7 +113,25 @@ export function registerRealtimeWSS(wss) {
                         }
                     }
                 }
-            };
+            },
+                tools = [
+                    {
+                        type: "function",
+                        name: "queryKnowledge",
+                        description:
+                            "Search the hospital knowledge base using ChromaDB. Use this for hospital-specific questions.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                question: {
+                                    type: "string",
+                                    description: "The user's hospital-related question"
+                                }
+                            },
+                            required: ["question"]
+                        }
+                    }
+                ];
 
             openaiWs.send(JSON.stringify(sessionUpdate));
         });
@@ -178,9 +177,53 @@ export function registerRealtimeWSS(wss) {
             }
 
             if (event.type === "response.function_call_arguments.done") {
-                const args = JSON.parse(event.arguments);
-                const results = await queryChroma(args.question);
+                try {
+                    const args = JSON.parse(event.arguments);
+                    const userQuestion = args.question;
 
+                    // Query your ChromaDB pipeline
+                    const relevantChunks = await queryChroma(userQuestion, 5);
+
+                    // Format the context
+                    const contextString = relevantChunks
+                        .map((chunk, idx) => `[Source ${idx + 1}]: ${chunk.text}`)
+                        .join('\n\n');
+
+                    console.log("Context found. Sending back to OpenAI...");
+
+                    // Send the function output back to OpenAI
+                    openaiWs.send(JSON.stringify({
+                        type: "conversation.item.create",
+                        item: {
+                            type: "function_call_output",
+                            call_id: event.call_id,
+                            output: JSON.stringify({ context: contextString })
+                        }
+                    }));
+
+                    // Tell OpenAI to generate a response using the new context
+                    openaiWs.send(JSON.stringify({
+                        type: "response.create",
+                        response: {
+                            modalities: ["text", "audio"]
+                        }
+                    }));
+
+                } catch (err) {
+                    console.error("Error executing function call:", err);
+
+                    // Tell AI the tool failed so it can respond gracefully
+                    openaiWs.send(JSON.stringify({
+                        type: "conversation.item.create",
+                        item: {
+                            type: "function_call_output",
+                            call_id: event.call_id,
+                            output: JSON.stringify({ error: "Failed to fetch context" })
+                        }
+                    }));
+
+                    openaiWs.send(JSON.stringify({ type: "response.create" }));
+                }
             }
         });
 

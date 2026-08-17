@@ -287,7 +287,7 @@ export const sendQueryToGroqLLM = async (userQuery) => {
 
     // Step 3 — send to Groq with context injected
     const response = await groq.chat.completions.create({
-        model: "llama-3.1-8b-instant",
+        model: "openai/gpt-oss-20b",
         temperature: 0.3,
         messages: [
             {
