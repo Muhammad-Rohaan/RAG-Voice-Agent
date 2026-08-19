@@ -202,11 +202,10 @@ export default function useRealtimeVoiceAgent(wsUrl = RAG_WS_URL) {
         const inputBuffer = audioProcessingEvent.inputBuffer;
         const inputData = inputBuffer.getChannelData(0);
 
-        // Echo Suppression: Do NOT transmit mic audio while AI output is actively playing
-        if (agentStateRef.current === 'speaking') {
-          setVolumeLevel(0);
-          return;
-        }
+        // During AI playback, suppress the volume visualizer but still send mic audio
+        // so OpenAI's server-side VAD can detect user speech for barge-in interruption.
+        // Hardware echoCancellation (enabled above) handles acoustic echo.
+        const isSpeaking = agentStateRef.current === 'speaking';
 
         // Compute RMS volume level for UI visualizer
         let sum = 0;
@@ -219,7 +218,8 @@ export default function useRealtimeVoiceAgent(wsUrl = RAG_WS_URL) {
         const now = Date.now();
         if (now - lastVolTime > 100) {
           lastVolTime = now;
-          setVolumeLevel(rms < 0.003 ? 0 : Math.min(1, rms * 10));
+          // Zero the visualizer while AI is speaking to avoid mic bleed showing in UI
+          setVolumeLevel(isSpeaking ? 0 : (rms < 0.003 ? 0 : Math.min(1, rms * 10)));
         }
 
         if (!isStreamingRef.current || !isSessionReadyRef.current) return;
